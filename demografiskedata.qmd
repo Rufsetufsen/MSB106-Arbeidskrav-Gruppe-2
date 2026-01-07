@@ -1,0 +1,137 @@
+---
+title: "Innhenting av data, Demografiske, Karin"
+format: html
+editor: visual
+---
+
+```{r}
+library(PxWebApiData)
+library(dplyr)
+library(stringr)
+library(readr)
+```
+
+```{r}
+url <- "https://data.ssb.no/api/v0/no/table/07459/"
+```
+
+```{r}
+# 1) hent metadata og lag liste over kommune-koder (4 sifre)
+meta <- ApiData(url, returnMetaData = TRUE)
+
+region_tab <- data.frame(
+  code = meta[[1]]$values,
+  text = meta[[1]]$valueTexts,
+  stringsAsFactors = FALSE
+)
+
+kommuner <- region_tab %>%
+  filter(grepl("^\\d{4}$", code)) %>%  # kommune-koder
+  pull(code)
+```
+
+```{r}
+# 2) alder-koder
+aldre <- c(sprintf("%03d", 0:104), "105+")
+```
+
+```{r}
+
+# 3) se query (ikke hent data)
+df_info <- ApiData(
+  url,
+  Region = kommuner,
+  Kjonn  = c("1", "2"),
+  Alder  = aldre,
+  ContentsCode = "Personer1",
+  Tid    = "2025")
+
+```
+
+```{r}
+# henter datasett
+df_demografi <- as.data.frame(df_info)
+
+```
+
+```{r}
+# sjekker variablesnavn
+names(df_demografi)
+```
+
+```{r}
+# rename
+df_demografi <- df_demografi %>%
+  rename_with(
+    ~ str_extract(.x, "[^.]+$"),  
+    starts_with("X07459")
+  )
+
+names(df_demografi)
+
+```
+
+```{r}
+# sjekker data for å fjerne duplikat
+unique(df_demografi$`dataset.ContentsCode`)
+table(df_demografi$`dataset.ContentsCode`)
+
+unique(df_demografi$`statistikkvariabel`)
+table(df_demografi$`statistikkvariabel`)
+
+
+all(df_demografi$value == df_demografi$`dataset.value`)
+all(df_demografi$år == df_demografi$`dataset.Tid`)
+
+
+```
+
+```{r}
+# fjerner duplikat
+# dataset.ContentsCode og statistikkvariabel: kun en verdi (Personer, enhet for value)
+# dataset.Tid og dataset.value: identiske med år og value
+df_demografi <- df_demografi %>%
+  select(
+    -`dataset.ContentsCode`,
+    -statistikkvariabel,
+    -dataset.Tid,
+    -dataset.value
+  )
+
+```
+
+```{r}
+# etter nye aldergrupper
+
+df_demo <- df_demografi %>%
+  mutate(
+    alder_num = parse_number(`dataset.Alder`),
+    aldersgruppe = case_when(
+      alder_num <= 19 ~ "0–19",
+      alder_num <= 29 ~ "20–29",
+      alder_num <= 45 ~ "30–45",
+      alder_num <= 66 ~ "45–66",
+      TRUE            ~ "67+"
+    )
+  ) %>%
+  filter(
+    !is.na(alder_num),
+    !is.na(value),
+    !is.na(region),
+    !is.na(`dataset.Region`),
+    !is.na(kjønn),
+    !is.na(`dataset.Kjonn`)
+  ) %>%
+  group_by(region, `dataset.Region`, kjønn, `dataset.Kjonn`, aldersgruppe) %>%
+  summarise(
+    befolkning = sum(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+df_demo
+
+```
+
+```{r}
+# laster ned df_demo som excel
+# write_xlsx(df_demo, "df_demo.xlsx")
+```
