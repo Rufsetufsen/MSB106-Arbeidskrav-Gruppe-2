@@ -54,7 +54,11 @@ nocite: '@*'
 #| message: false
 #| warning: false
 library(knitr)
-library(ggpubr)
+library(tidyverse)
+library(lubridate)
+library(PxWebApiData)
+library(flextable)
+library(dplyr)
 options(
   paged.print = FALSE,
   scipen = 999
@@ -77,6 +81,39 @@ rm(packs)
 # Innhentning av data
 
 ## Folketall
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+```
+
+```{r}
+#| cache: true
+bef <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = as.character(2000:2025),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  select(Region, år, value) |> 
+  group_by(Region, år) |> 
+  summarise(bef = sum(value), .groups = "drop") |> 
+  pivot_wider(
+    names_prefix = "bef",
+    names_from = år,
+    values_from = bef
+  ) |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6))
+```
+
+# Tilstand og utvikling for ulike variabler
+
+Som grunnlag for å lage kartvisualiseringer kan dere bruke filen
+knr_kart_norge_kystlinje.gpkg, som dere finner i Canvas. Lag
+kartframstillinger for:
+
+• Prosentvis folketallsvekst for ulike kommuner etter år 2000
 
 ```{r}
 
