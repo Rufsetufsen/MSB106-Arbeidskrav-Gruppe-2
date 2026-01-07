@@ -116,7 +116,12 @@ kartframstillinger for:
 • Prosentvis folketallsvekst for ulike kommuner etter år 2000
 
 ```{r}
-
+bef <- bef|>
+  mutate(bef_endr = (bef2025/bef2000)*100) |> 
+  mutate(bef_endr = case_when(
+    is.infinite(bef_endr) ~ 100,
+    .default = bef_endr
+  ))
 ```
 
 # Litteraturliste
