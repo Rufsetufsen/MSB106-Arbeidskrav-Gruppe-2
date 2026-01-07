@@ -1,0 +1,93 @@
+---
+title: "Kladd_601622"
+editor: visual
+author: ""
+institute: "HVL"
+date: last-modified
+date-format: "dddd D MMM, YYYY"
+abstract: ""
+number-sections: true
+number-depth: 3
+lang: NO_nb
+csl: apa7.csl
+crossref:
+  fig-prefix: figur
+  tbl-prefix: tabell
+  fig-title: Figur
+  tbl-title: Tabell
+  lof-title: "Figurliste"
+  lot-title: "Tabelliste"
+format:
+  html: default
+  typst:
+    papersize: a4
+    toc: true
+    toc-title: Innholdsfortegnelse
+    documentclass: article
+    number-sections: true
+    keep-tex: true
+    fig-pos: "H"
+    output-file: "Kladd_601622"
+    citeproc: true
+  pdf:
+    documentclass: article
+    toc:  true
+    toc-title: Innholdsfortegnelse
+    number-sections: true
+    keep-tex: true
+    papersize: A4
+    fig-pos: "H"
+    output-file: "Kladd_601622"
+editor_options:
+  markdown:
+    wrap: 72
+    canonical: true
+    chunk_output_type: console
+echo: false
+eval: true
+bibliography: ArbRef.bib
+nocite: '@*'
+---
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+library(knitr)
+library(ggpubr)
+options(
+  paged.print = FALSE,
+  scipen = 999
+  )
+```
+
+```{r}
+#| eval: false
+# Lage en bib fil for brukte R pakker 
+packs <- c(
+  "knitr"
+  )
+write_bib(
+  packs,
+  file = "ArbRef.bib"
+  )
+rm(packs)
+```
+
+# Innhentning av data
+
+## Folketall
+
+```{r}
+
+```
+
+# Litteraturliste
+
+::: {#refs}
+:::
+
+\listoffigures
+\listoftables
+
+# Appendiks {.unnumbered}
