@@ -1,9 +1,34 @@
 ---
-title: "Arbeidskrav i Anvendt by- og regionaløkonomi"
+title: "Arbeidskrav i Regional økonomi"
 author: "Gruppe 2"
-format: html
-editor: visual
+date: last-modified
+date-format: "DD MMMM YYYY"
+format: 
+  pdf:
+    number-sections: true
+    geometry: 
+      - bottom=25mm
+      - left=25mm
+      - right=25mm
+      - top=30mm
+language: 
+    crossref-fig-title: "Figur"
 ---
+
+```{r}
+#| label: setup
+#| message: false
+#| echo: true
+#| warning: false
+library(tidyverse)
+library(readxl)
+library(sf)
+library(spdep)
+library(writexl)
+library(PxWebApiData)
+library(modelsummary)
+```
+
 
 ## Datainnhenting
 
@@ -67,6 +92,77 @@ Tabell 07459 på nettsidene til Statistisk Sentralbyrå (SSB) gir for eksempel m
 
 Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen.
 Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike faser i et livsløp.
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+```
+
+```{r}
+SSb_Arbledig <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/13563/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = as.character(2008:2024),
+  HovArbStyrkStatus = c("A", "A.09"),
+  Alder = "15+",
+  InnvandrKat = "A-G") |>
+  select(region, år, HovArbStyrkStatus, value) |>
+  pivot_wider(
+    names_from  = HovArbStyrkStatus,
+    values_from = value
+  ) |>
+  rename(
+    arbeidsstyrke = A,
+    registrerte_ledige = `A.09`|>
+    mutate(
+    prosent_arbledig = if_else(
+    is.na(arbeidsstyrke) | arbeidsstyrke == 0,
+    NA_real_,
+    100 * registrerte_ledige / arbeidsstyrke))
+    )
+  )
+```
+
+
+
+```{r}
+# NA verdier har ikke blitt fjernet, hvis du lurte :)
+# Leser inn excel tabell NavTabell 1995-2024.xlsx
+NAV <- read_excel("NavTabell 1995-2024.xlsx",
+                  sheet = 1,
+                  skip = 4,
+                  col_types = "text")
+
+# Gjør om Karakterer til Nummeriske tall
+NAV <- NAV |>
+  mutate(
+    År = as.numeric(År),
+    Kommunenr = as.numeric(Kommunenr)
+  )
+
+NAV <- NAV |>
+  mutate(
+    beholdning = as.numeric(Beholdning),
+    andel = as.numeric(`Andel av arbeidsstyrken`)
+  ) |>
+  filter(Kommunenr != -1)
+
+# Lager et eget data for nav_aar, der en gjør om månedstall til ett gjennomsnittstall for hvert år i hver kommune.
+nav_aar <- NAV |>
+  group_by(Kommunenr, Kommunenavn, År) |>
+  summarise(
+    prosent_ledige_i_året = mean(andel, na.rm = TRUE),
+    antall_ledige_i_året = mean(beholdning, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Sletter NAV grunnet til at de viktige tallene vi trenger ligger i nav_aar
+ rm(NAV)
+```
+
+Skriv noe stuff om arbeidsledighet fra SSB og NAV
+
+
 
 ### Sentralitetsindeksen for norske kommuner.
 
