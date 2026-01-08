@@ -98,14 +98,14 @@ beftot <- PxData12(
   group_by(Region, år) |> 
   summarise(bef = sum(value), .groups = "drop") |> 
   pivot_wider(
-    names_prefix = "bef",
+    names_prefix = "beftot",
     names_from = år,
     values_from = bef
   ) |> 
   rename(kommunenummer = Region) |> 
   filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
   mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |>
-  mutate(bef_endrtot = (bef2025/bef2000)*100) |> 
+  mutate(bef_endrtot = (beftot2025/beftot2000)*100) |> 
   mutate(bef_endrtot = case_when(
     is.infinite(bef_endrtot) ~ 100,
     .default = bef_endrtot
@@ -123,7 +123,7 @@ befald <- PxData12(
   group_by(Region, år, alder) |> 
   summarise(bef = sum(value), .groups = "drop") |> 
   pivot_wider(
-    names_prefix = "bef",
+    names_prefix = "befald",
     names_from = år,
     values_from = bef
   ) |> 
