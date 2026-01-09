@@ -136,6 +136,46 @@ befald <- PxData12(
 bef <- left_join(beftot, befald, by = join_by("kommunenummer"))
 ```
 
+```{r}
+save(bef, file = "bef.rdata")
+```
+
+## Utdanningsnivå.
+
+Tabell 09429 på nettsidene til SSB gir en lang tidsserie for 1970-2024
+for hvordan befolkningen er sammensatt etter 6 ulike utdanningsnivåer,
+etter kjønn, blant annet spesifisert for den kommuneinndelingen vi har
+hatt etter 2024.
+
+```{r}
+#| cache: true
+utdan <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/09429/",
+  Region = list("*"),
+  Tid = as.character(c(1970, 2000:2024)),
+  Nivaa = c("03a", "04a"),
+  Kjonn = "0",
+  ContentsCode = "PersonerProsent") |> 
+  select(Region, år, nivå, Nivaa, PersonerProsent) |>
+  rename(knr = Region)
+
+utdan <- left_join(newknr, utdan, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år) |>
+  summarise(andel = sum(PersonerProsent), .groups = "drop") |> 
+  pivot_wider(
+    names_prefix = "utdan",
+    names_from = år,
+    values_from = andel
+  ) |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  select(-utdanNA)
+```
+
+```{r}
+save(utdan, file = "utdan.rdata")
+```
+
 # Tilstand og utvikling for ulike variabler
 
 Som grunnlag for å lage kartvisualiseringer kan dere bruke filen
