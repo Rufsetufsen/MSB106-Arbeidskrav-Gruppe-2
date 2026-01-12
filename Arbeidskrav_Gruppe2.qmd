@@ -24,7 +24,10 @@ Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter 
 
 ### Sentralitetsindeksen for norske kommuner.
 
-Data er lett tilgjengelige på nettsidene til SSB. Gjør kort greie for beregningsgrunnlaget for indeksen. Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
+Data er lett tilgjengelige på nettsidene til SSB.
+Gjør kort greie for beregningsgrunnlaget for indeksen.
+Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
+
 
 ```{r}
 #Leser av excel-filene
