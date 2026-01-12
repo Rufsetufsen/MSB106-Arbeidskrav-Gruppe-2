@@ -5,6 +5,11 @@ format: html
 editor: visual
 ---
 
+```{r}
+library(tidyverse)
+```
+
+
 ## Datainnhenting
 
 Bruk den kommuneinndelingen som gjelder pr 1.
@@ -25,6 +30,20 @@ Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fan
 Data er lett tilgjengelige på nettsidene til SSB.
 Gjør kort greie for beregningsgrunnlaget for indeksen.
 Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
+```{r}
+sentralitet2020 <- 
+  read_xlsx("./data/sentralitet 2020 kommuner.xlsx")
+sentralitet2023 <-
+  read_xlsx("./data/sentralitet 2023-2024 kommuner.xlsx")
+```
+
+Sentralitetsindeksen er en kode som beskriver hver kommunes sentralitet. Beregningen av sentralitetsindeksen er basert på reisetid til arbeidsplasser og servicefunksjoner fra alle bebodde grunnkretser. 
+Indeksen er sammensatt av to del-indekser: 
+- Antall arbeidsplasser de som bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter.
+- Hvor mange ulike typer servicefunksjoner (varer og tjenester) de som bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter.
+
+Antallet vektes, slik at en arbeidsplass eller servicefunksjon som ligger nært bostedet teller mer enn en som ligger lenger bort.
+Indeksen fordeles på en kontinuerlig skala fra 0 (minst sentral) til 1000 (mest sentral), og fordeles så inn i 6 forskjellige sentralitetsklasser, basert på kommunens sentralitetsverdi.
 
 ### Prosentvis arbeidsledighet.
 
