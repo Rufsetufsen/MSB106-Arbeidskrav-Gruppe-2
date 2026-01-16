@@ -169,6 +169,65 @@ save(utdan, file = "utdan.rdata")
 
 ## Ut- og innflyttinger pr 1000 innbyggere
 
+```{r}
+#| cache: true
+flyttper1000 <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/13255/",
+  Region = list("*"),
+  Tid = as.character(2010:2024),
+  Alder = c("18-29", "30+")) |>
+  select(Region, år, Alder, Innflytting, Utflytting) |> 
+  rename(knr = Region,
+         alder = Alder)
+
+flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år, alder) |>
+  summarise(innflytting = sum(Innflytting),
+            utflytting = sum(Utflytting), 
+            .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  mutate(nettoflytt = innflytting - utflytting) |>
+  left_join(beftot, join_by(kommunenummer, år)) |> 
+  mutate(innper1000 = innflytting/beftot*1000,
+         utper1000 = utflytting/beftot*1000,
+         nettoflyttper1000 = innper1000 - utper1000) |>
+  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
+```
+
+```{r}
+flyttkat <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/13255/",
+  Region = list("*"),
+  Tid = as.character(2010:2024),
+  Alder = c("18-29", "30+")) |>
+  select(Region, år, Innflytting, Utflytting) |> 
+  rename(knr = Region)
+
+flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år) |>
+  summarise(innflytting = sum(Innflytting),
+            utflytting = sum(Utflytting), 
+            .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  left_join(beftot, join_by(kommunenummer, år)) |>
+  mutate(totinnper1000 = innflytting/beftot*1000,
+         totutper1000 = utflytting/beftot*1000,
+         nettototflytt = totinnper1000 - totutper1000) |>
+  select(kommunenummer, år, nettototflytt) |>
+  mutate(kategori = ifelse(nettototflytt > 0, "inn_mest", "ut_mest")) |>
+  select(-nettototflytt)
+```
+
+```{r}
+flytt <- left_join(flyttper1000, flyttkat, by = join_by(kommunenummer, år))
+```
+
+```{r}
+save(flytt, file = "flytt.rdata")
+```
+
 # Tilstand og utvikling for ulike variabler
 
 Som grunnlag for å lage kartvisualiseringer kan dere bruke filen
