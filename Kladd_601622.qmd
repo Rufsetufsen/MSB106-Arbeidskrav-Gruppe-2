@@ -92,15 +92,29 @@ load("newknr.rdata")
 beftot <- PxData12(
   "https://data.ssb.no/api/v0/no/table/07459/",
   Region = list("agg:KommSummer", knr24),
-  Tid = as.character(2000:2025),
+  Tid = as.character(1986:2025),
   Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
   select(Region, år, value) |> 
   group_by(Region, år) |> 
-  summarise(bef = sum(value), .groups = "drop") |> 
+  summarise(beftot = sum(value), .groups = "drop") |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6))
+```
+
+```{r}
+#| cache: true
+befendr <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = c("2000", "2025"),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  group_by(Region, år) |> 
+  summarise(beftot = sum(value), .groups = "drop") |> 
   pivot_wider(
     names_prefix = "beftot",
     names_from = år,
-    values_from = bef
+    values_from = beftot
   ) |> 
   rename(kommunenummer = Region) |> 
   filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
@@ -109,31 +123,12 @@ beftot <- PxData12(
   mutate(bef_endrtot = case_when(
     is.infinite(bef_endrtot) ~ 100,
     .default = bef_endrtot
-  ))
+  )) |>
+  select(kommunenummer, bef_endrtot)
 ```
 
 ```{r}
-#| cache: true
-befald <- PxData12(
-  "https://data.ssb.no/api/v0/no/table/07459/",
-  Region = list("agg:KommSummer", knr24),
-  Tid = as.character(2000:2025),
-  Alder = list("agg:TiAarigGruppering", c("F00-09", "F10-19", "F20-29", "F30-39", "F40-49", "F50-59", "F60-69", "F70-79", "F80-89", "F90-99", "F100G10+"))) |> 
-  select(Region, år, alder, value) |> 
-  group_by(Region, år, alder) |> 
-  summarise(bef = sum(value), .groups = "drop") |> 
-  pivot_wider(
-    names_prefix = "befald",
-    names_from = år,
-    values_from = bef
-  ) |> 
-  rename(kommunenummer = Region) |> 
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
-  mutate(kommunenummer = str_sub(kommunenummer, 3, 6))
-```
-
-```{r}
-bef <- left_join(beftot, befald, by = join_by("kommunenummer"))
+bef <- left_join(beftot, befendr, by = join_by("kommunenummer"))
 ```
 
 ```{r}
@@ -152,29 +147,27 @@ hatt etter 2024.
 utdan <- pxwebData12(
   "https://data.ssb.no/api/v0/no/table/09429/",
   Region = list("*"),
-  Tid = as.character(c(1970, 2000:2024)),
+  Tid = as.character(c(1970, 1986:2024)),
   Nivaa = c("03a", "04a"),
   Kjonn = "0",
-  ContentsCode = "PersonerProsent") |> 
-  select(Region, år, nivå, Nivaa, PersonerProsent) |>
+  ContentsCode = "Personer") |> 
+  select(Region, år, nivå, Nivaa, Personer) |>
   rename(knr = Region)
 
 utdan <- left_join(newknr, utdan, join_by(knr)) |>
   rename(kommunenummer = knr2023) |>
   group_by(kommunenummer, år) |>
-  summarise(andel = sum(PersonerProsent), .groups = "drop") |> 
-  pivot_wider(
-    names_prefix = "utdan",
-    names_from = år,
-    values_from = andel
-  ) |>
+  summarise(totutper = sum(Personer), .groups = "drop") |>
   filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
-  select(-utdanNA)
+  left_join(beftot, join_by(kommunenummer, år)) |> 
+  mutate(utdanand = totutper/beftot*100)
 ```
 
 ```{r}
 save(utdan, file = "utdan.rdata")
 ```
+
+## Ut- og innflyttinger pr 1000 innbyggere
 
 # Tilstand og utvikling for ulike variabler
 
