@@ -9,7 +9,6 @@ load("nor_knr24_vec.rdata")
 load("newknr.rdata")
 ```
 
-
 ```{r}
 #| label: setup
 #| message: false
@@ -25,14 +24,13 @@ library(PxWebApiData)
 library(modelsummary)
 ```
 
-
 ```{r}
-# demografiske mellom 2000 og 2025
+# demografiske mellom 1986 og 2025
 
 demografiske_kjonn <- PxData12(
   "https://data.ssb.no/api/v0/no/table/07459/",
   Region = list("agg:KommSummer", knr24),
-  Tid    = as.character(2000:2025),
+  Tid    = as.character(1986:2025),
   Kjonn  = c("1","2"),
   Alder  = list("agg:TiAarigGruppering",
                 c("F00-09","F10-19","F20-29","F30-39","F40-49",
@@ -53,9 +51,8 @@ demografiske_kjonn <- PxData12(
 
 ```
 
-
 ```{r}
-# demografi etter 
+# demografi etter aldersgruppe
 demografi <- demografiske_kjonn |>
   mutate(
     aldersgruppe = case_when(
@@ -71,9 +68,3 @@ demografi <- demografiske_kjonn |>
 
 
 ```
-
-
-
-
-
-
