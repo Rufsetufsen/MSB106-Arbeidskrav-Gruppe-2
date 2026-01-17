@@ -206,7 +206,7 @@ test <- PxData12(
   "https://data.ssb.no/api/v0/no/table/06035/",
   Region = list("agg:KommSummer", knr24),
   Tid = as.character(2002:2024),
-  Boligtype = c("01", "03"),   # 01 = Enebolig, 03 = Småhus
+  Boligtype = c("01", "03"),   # 01 = Enebolig, 03 = Leiligheter 
   ContentsCode = "KvPris"
 )
 ```
