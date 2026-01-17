@@ -93,11 +93,28 @@ Tabell 07459 på nettsidene til Statistisk Sentralbyrå (SSB) gir for eksempel m
 Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen.
 Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike faser i et livsløp.
 
+
+### Sentralitetsindeksen for norske kommuner.
+
+Data er lett tilgjengelige på nettsidene til SSB.
+Gjør kort greie for beregningsgrunnlaget for indeksen.
+Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
+
+### Prosentvis arbeidsledighet.
+
+Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1).
+Dette gir grunnlag for å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024.
+Det er ikke nødvendig å gå inn på alder og innvandringskategori i data.
+Dere finner også på nett 1 en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter for kommuner for perioden 1995-2024).
+Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert på månedsdata.
+Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
+
 ```{r}
 load("nor_knr24_vec.rdata")
 load("newknr.rdata")
 ```
 
+#### Arbeidsledighet fra SSB
 ```{r}
 SSb_Arbledig <- PxData12(
   "https://data.ssb.no/api/v0/no/table/13563/",
@@ -113,20 +130,18 @@ SSb_Arbledig <- PxData12(
   ) |>
   rename(
     arbeidsstyrke = A,
-    registrerte_ledige = `A.09`|>
+    registrerte_ledige = `A.09`) |>
     mutate(
     prosent_arbledig = if_else(
     is.na(arbeidsstyrke) | arbeidsstyrke == 0,
     NA_real_,
     100 * registrerte_ledige / arbeidsstyrke))
-    )
-  )
 ```
 
 
-
+#### Arbeidsledighet fra NAV
 ```{r}
-# NA verdier har ikke blitt fjernet, hvis du lurte :)
+# Tabellen har noen divverse NA verdier i tabellen
 # Leser inn excel tabell NavTabell 1995-2024.xlsx
 NAV <- read_excel("NavTabell 1995-2024.xlsx",
                   sheet = 1,
@@ -147,7 +162,7 @@ NAV <- NAV |>
   ) |>
   filter(Kommunenr != -1)
 
-# Lager et eget data for nav_aar, der en gjør om månedstall til ett gjennomsnittstall for hvert år i hver kommune.
+# Lager en ny tabell for å legge sammen månedene for hver kommune, hvert år og finner gjennomsnittstallet for året.
 nav_aar <- NAV |>
   group_by(Kommunenr, Kommunenavn, År) |>
   summarise(
@@ -156,28 +171,19 @@ nav_aar <- NAV |>
     .groups = "drop"
   )
 
-# Sletter NAV grunnet til at de viktige tallene vi trenger ligger i nav_aar
+# Fjerner NAV tabellen for vi trenger den ikke mer.
  rm(NAV)
 ```
+Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å starte. I Norge publiserer både NAV og Statistik sentralbyrå (SSB) tall for arbeidsledighet, men bruker ulike metoder når det kommer til å samle inn data.
+Kilde: https://arbeidsledighet.no/sporsmal-og-svar/
 
-Skriv noe stuff om arbeidsledighet fra SSB og NAV
+NAVs tall omfatter personer som er registrert som helt ledigh hos NAV. Dette er en fulltelling av alle som faktisk har meldt seg som arbeidssøkere i NAVs systemer. SSB derimot, måler arbeidsledighet gjennom Arbeidskraftundersøkelsen (AKU), som er en intervjuundersøkelse basert på et representativt utvalg av hele befolkningen.
 
+Begge benytter de samme grunnleggende kriteriene for hva som regnes som arbeidsledihhet. Forskellen i tall skyldes først og fremst innsamlongsmetoden. SSB inkluderer også personer som er uten arbeid og aktivt søker jobb. Flere av disse kan være personer som ikke er registrert hos NAV. Dette fører til at SSB rapporterer et høyere ledighetstall enn NAV. 
 
+NAVs tall gir derimot et bedre bilde av hvor mange som faktisk mottat og har behov for oppføring fra et statlig organ, mens SSBs tall gir et bredere og mer helhetlig bilde av arbeidsledigheten i befolkningen som helhet.
 
-### Sentralitetsindeksen for norske kommuner.
-
-Data er lett tilgjengelige på nettsidene til SSB.
-Gjør kort greie for beregningsgrunnlaget for indeksen.
-Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
-
-### Prosentvis arbeidsledighet.
-
-Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1).
-Dette gir grunnlag for å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024.
-Det er ikke nødvendig å gå inn på alder og innvandringskategori i data.
-Dere finner også på nett 1 en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter for kommuner for perioden 1995-2024).
-Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert på månedsdata.
-Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
+Kilde: https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-arbeidsledighetstall
 
 ### Sysselsetting.
 
@@ -188,10 +194,23 @@ Bruk den kommuneinndelingen som gjelder i 2026.
 
 ### Gjennomsnittlig kvadratmeterpris for bolig.
 
+
 Data for boligomsetninger finnes i Tabell 06035 på nettsidene til SSB.
 Data er gitt for alle år i perioden 2002-2024, blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
 Det kan være en god ide å hente informasjon både om eneboliger og leiligheter.
 For en sammenligning på tvers av kommuner kan priser på eneboliger være mest relevant, blant annet siden det er liten omsetning av leiligheter i mange små kommuner.
+
+```{r}
+#| cache: true
+test <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/06035/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = as.character(2002:2024),
+  Boligtype = c("01", "03"),   # 01 = Enebolig, 03 = Småhus
+  ContentsCode = "KvPris"
+)
+```
+
 
 ### Utdanningsnivå.
 
