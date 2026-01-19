@@ -149,7 +149,23 @@ demografi <- demografiske_kjonn |>
 
 Data er lett tilgjengelige på nettsidene til SSB. Gjør kort greie for beregningsgrunnlaget for indeksen. Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
 
-
+```{r}
+#Leser av excel-filene
+sentralitet2017 <-
+  read_xlsx("./data/sentralitet 2017.xlsx")
+sentralitet2020 <- 
+  read_xlsx("./data/sentralitet 2020 kommuner.xlsx")
+sentralitet2023 <-
+  read_xlsx("./data/sentralitet 2023-2024 kommuner.xlsx")
+# Slår sammen tabellene fra 2020/2023 slik at vi kan se utvikling. 
+Sentralitet <-
+  newknr %>%
+  left_join(sentralitet2017, by = c("knr" = "Kommunenummer 2018"), keep = FALSE) %>%
+  left_join(sentralitet2020, by = "knr", keep = FALSE) %>%
+  left_join(sentralitet2023, by = c("knr2023" = "knr 2024"), keep = FALSE)%>%
+  # Sammenligner sentralitetsindeks i 2020 og 2023.  
+  mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`)
+```
 
 
 ### Prosentvis arbeidsledighet.
@@ -476,6 +492,24 @@ pendl_per1000 <- pendl_begge |>
 
 
 
+```{r}
+library(writexl)
+```
+
+```{r}
+sheets <- list(
+  "bef"            = bef,
+  "demografi"     = demografi,
+  "SSb_Arbledig"   = SSb_Arbledig,
+  "bolig"          = bolig,
+  "utdanning"     = utdanning,
+  "flytt"          = flytt,
+  "pendl_per1000" = pendl_per1000,
+  "Sentralitet"   = Sentralitet
+)
+
+write_xlsx(sheets, "data_export.xlsx")
+```
 
 
 
