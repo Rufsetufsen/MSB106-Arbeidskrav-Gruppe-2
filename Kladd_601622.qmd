@@ -1,0 +1,247 @@
+---
+title: "Kladd_601622"
+editor: visual
+author: ""
+institute: "HVL"
+date: last-modified
+date-format: "dddd D MMM, YYYY"
+abstract: ""
+number-sections: true
+number-depth: 3
+lang: NO_nb
+csl: apa7.csl
+crossref:
+  fig-prefix: figur
+  tbl-prefix: tabell
+  fig-title: Figur
+  tbl-title: Tabell
+  lof-title: "Figurliste"
+  lot-title: "Tabelliste"
+format:
+  html: default
+  typst:
+    papersize: a4
+    toc: true
+    toc-title: Innholdsfortegnelse
+    documentclass: article
+    number-sections: true
+    keep-tex: true
+    fig-pos: "H"
+    output-file: "Kladd_601622"
+    citeproc: true
+  pdf:
+    documentclass: article
+    toc:  true
+    toc-title: Innholdsfortegnelse
+    number-sections: true
+    keep-tex: true
+    papersize: A4
+    fig-pos: "H"
+    output-file: "Kladd_601622"
+editor_options:
+  markdown:
+    wrap: 72
+    canonical: true
+    chunk_output_type: console
+echo: false
+eval: true
+bibliography: ArbRef.bib
+nocite: '@*'
+---
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+library(knitr)
+library(tidyverse)
+library(lubridate)
+library(PxWebApiData)
+library(flextable)
+library(dplyr)
+options(
+  paged.print = FALSE,
+  scipen = 999
+  )
+```
+
+```{r}
+#| eval: false
+# Lage en bib fil for brukte R pakker 
+packs <- c(
+  "knitr"
+  )
+write_bib(
+  packs,
+  file = "ArbRef.bib"
+  )
+rm(packs)
+```
+
+# Innhentning av data
+
+## Folketall
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+```
+
+```{r}
+#| cache: true
+beftot <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = as.character(1986:2025),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  select(Region, år, value) |> 
+  group_by(Region, år) |> 
+  summarise(beftot = sum(value), .groups = "drop") |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6))
+```
+
+```{r}
+#| cache: true
+befendr <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = c("2000", "2025"),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  group_by(Region, år) |> 
+  summarise(beftot = sum(value), .groups = "drop") |> 
+  pivot_wider(
+    names_prefix = "beftot",
+    names_from = år,
+    values_from = beftot
+  ) |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |>
+  mutate(bef_endrtot = (beftot2025/beftot2000)*100) |> 
+  mutate(bef_endrtot = case_when(
+    is.infinite(bef_endrtot) ~ 100,
+    .default = bef_endrtot
+  )) |>
+  select(kommunenummer, bef_endrtot)
+```
+
+```{r}
+bef <- left_join(beftot, befendr, by = join_by("kommunenummer"))
+```
+
+```{r}
+save(bef, file = "bef.rdata")
+```
+
+## Utdanningsnivå.
+
+Tabell 09429 på nettsidene til SSB gir en lang tidsserie for 1970-2024
+for hvordan befolkningen er sammensatt etter 6 ulike utdanningsnivåer,
+etter kjønn, blant annet spesifisert for den kommuneinndelingen vi har
+hatt etter 2024.
+
+```{r}
+#| cache: true
+utdan <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/09429/",
+  Region = list("*"),
+  Tid = as.character(c(1970, 1986:2024)),
+  Nivaa = c("03a", "04a"),
+  Kjonn = "0",
+  ContentsCode = "Personer") |> 
+  select(Region, år, nivå, Nivaa, Personer) |>
+  rename(knr = Region)
+
+utdan <- left_join(newknr, utdan, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år) |>
+  summarise(totutper = sum(Personer), .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  left_join(beftot, join_by(kommunenummer, år)) |> 
+  mutate(utdanand = totutper/beftot*100)
+```
+
+```{r}
+save(utdan, file = "utdan.rdata")
+```
+
+## Ut- og innflyttinger pr 1000 innbyggere
+
+```{r}
+#| cache: true
+flyttper1000 <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/13255/",
+  Region = list("*"),
+  Tid = as.character(2010:2024),
+  Alder = c("18-29", "30+")) |>
+  select(Region, år, Alder, Innflytting, Utflytting) |> 
+  rename(knr = Region,
+         alder = Alder)
+
+flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år, alder) |>
+  summarise(innflytting = sum(Innflytting),
+            utflytting = sum(Utflytting), 
+            .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  mutate(nettoflytt = innflytting - utflytting) |>
+  left_join(beftot, join_by(kommunenummer, år)) |> 
+  mutate(innper1000 = innflytting/beftot*1000,
+         utper1000 = utflytting/beftot*1000,
+         nettoflyttper1000 = innper1000 - utper1000) |>
+  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
+```
+
+```{r}
+flyttkat <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/13255/",
+  Region = list("*"),
+  Tid = as.character(2010:2024),
+  Alder = c("18-29", "30+")) |>
+  select(Region, år, Innflytting, Utflytting) |> 
+  rename(knr = Region)
+
+flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år) |>
+  summarise(innflytting = sum(Innflytting),
+            utflytting = sum(Utflytting), 
+            .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  left_join(beftot, join_by(kommunenummer, år)) |>
+  mutate(totinnper1000 = innflytting/beftot*1000,
+         totutper1000 = utflytting/beftot*1000,
+         nettototflytt = totinnper1000 - totutper1000) |>
+  select(kommunenummer, år, nettototflytt) |>
+  mutate(kategori = ifelse(nettototflytt > 0, "inn_mest", "ut_mest")) |>
+  select(-nettototflytt)
+```
+
+```{r}
+flytt <- left_join(flyttper1000, flyttkat, by = join_by(kommunenummer, år))
+```
+
+```{r}
+save(flytt, file = "flytt.rdata")
+```
+
+# Tilstand og utvikling for ulike variabler
+
+Som grunnlag for å lage kartvisualiseringer kan dere bruke filen
+knr_kart_norge_kystlinje.gpkg, som dere finner i Canvas. Lag
+kartframstillinger for:
+
+• Prosentvis folketallsvekst for ulike kommuner etter år 2000
+
+# Litteraturliste
+
+::: {#refs}
+:::
+
+\listoffigures
+\listoftables
+
+# Appendiks {.unnumbered}
