@@ -48,44 +48,7 @@ load("newknr.rdata")
 
 Bruk den kommuneinndelingen som gjelder pr 1.
 januar 2026.
-Hent inn data for følgende variable: • Folketall.
-Tabell 07459 på nettsidene til Statistisk Sentralbyrå (SSB) gir for eksempel mulighet til å hente årlige befolkningsdata for kommuner tilbake til 1986.
-• Demografiske data.
-Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen.
-Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike faser i et livsløp.
-• Sentralitetsindeksen for norske kommuner.
-Data er lett tilgjengelige på nettsidene til SSB.
-Gjør kort greie for beregningsgrunnlaget for indeksen.
-Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
-• Prosentvis arbeidsledighet.
-Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1).
-Dette gir grunnlag for å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024.
-Det er ikke nødvendig å gå inn på alder og innvandringskategori i data.
-Dere finner også på nett 1 en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter for kommuner for perioden 1995-2024).
-Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert på månedsdata.
-Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
-• Sysselsetting.
-Tabell 03321 på nettsidene til SSB gir grunnlag for å finne antall arbeidsplasser i norske kommuner tilbake til år 2000, beregnet i 4.
-kvartal for hvert år.
-Velg sysselsatte personer etter arbeidsstedskommune.
-Bruk den kommuneinndelingen som gjelder i 2026.
-• Gjennomsnittlig kvadratmeterpris for bolig.
-Data for boligomsetninger finnes i Tabell 06035 på nettsidene til SSB.
-Data er gitt for alle år i perioden 2002-2024, blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
-Det kan være en god ide å hente informasjon både om eneboliger og leiligheter.
-For en sammenligning på tvers av kommuner kan priser på eneboliger være mest relevant, blant annet siden det er liten omsetning av leiligheter i mange små kommuner.
-• Utdanningsnivå.
-Tabell 09429 på nettsidene til SSB gir en lang tidsserie for 1970-2024 for hvordan befolkningen er sammensatt etter 6 ulike utdanningsnivåer, etter kjønn, blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
-• Ut- og innflyttinger pr 1000 innbyggere.
-Informasjon om flyttestrømmer i perioden 2010-2024 finnes i Tabell 13255 på nettsidene til SSB.
-Data kan finnes blant annet for den kommuneinndelingen vi har hatt etter 2024.
-Ved å kombinere med data for folketall (se foran) kan en beregne flyttinger pr 1000 innbyggere, til sammenligning mellom kommunene.
-Kommunene kan videre kategoriseres etter om de har netto ut- eller innflytting, og en kan finne data for utflytting pr 1000 innbyggere for alderskategorien 18-29 år, og innflytting pr 1000 innbyggere for de som er 30 år eller eldre.
-• Inn- og utpendling.
-Innpendlingen kan gjerne måles pr 1000 arbeidsplasser i kommunen, dvs at en kombinerer data for samlet antall innpendlere i Tabell 03321 med data for sysselsetting i kommunen (etter arbeidssted).
-I anslag for utpendling pr 1000 arbeidstakere kombineres data om antall utpendlere med data for antall arbeidstakere (fra Tabell 03321, spesifisert etter bostedskommune).
-Anslag for antall arbeidstakere (etter bostedskommune) kan beregnes ut fra Tabell 03321.
-Denne tabellen kan videre brukes til å finne samlet antall pendlere ut fra kommunene og samlet antall pendlere inn til kommunene.
+Hent inn data for følgende variable:
 
 ### Folketall.
 
