@@ -200,17 +200,6 @@ Data er gitt for alle år i perioden 2002-2024, blant annet spesifisert for den 
 Det kan være en god ide å hente informasjon både om eneboliger og leiligheter.
 For en sammenligning på tvers av kommuner kan priser på eneboliger være mest relevant, blant annet siden det er liten omsetning av leiligheter i mange små kommuner.
 
-```{r}
-#| cache: true
-test <- PxData12(
-  "https://data.ssb.no/api/v0/no/table/06035/",
-  Region = list("agg:KommSummer", knr24),
-  Tid = as.character(2002:2024),
-  Boligtype = c("01", "03"),   # 01 = Enebolig, 03 = Leiligheter 
-  ContentsCode = "KvPris"
-)
-```
-
 
 ### Utdanningsnivå.
 
