@@ -123,7 +123,7 @@ SSb_Arbledig <- PxData12(
   HovArbStyrkStatus = c("A", "A.09"),
   Alder = "15+",
   InnvandrKat = "A-G") |>
-  select(region, år, HovArbStyrkStatus, value) |>
+  select(Region, år, HovArbStyrkStatus, value) |>
   pivot_wider(
     names_from  = HovArbStyrkStatus,
     values_from = value
@@ -131,11 +131,42 @@ SSb_Arbledig <- PxData12(
   rename(
     arbeidsstyrke = A,
     registrerte_ledige = `A.09`) |>
+  rename(knr24 = Region) |> 
+  filter(!knr24 %in% c("K-21-22", "K-23", "K-Rest")) |> 
     mutate(
+    knr24 = str_sub(knr24, 3, 6),
     prosent_arbledig = if_else(
     is.na(arbeidsstyrke) | arbeidsstyrke == 0,
     NA_real_,
-    100 * registrerte_ledige / arbeidsstyrke))
+    round(100 * registrerte_ledige / arbeidsstyrke, 2)))
+```
+
+```{r}
+arbledSSB <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/13563/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = as.character(2008:2024),
+  HovArbStyrkStatus = c("A", "A.09"), 
+  Alder = "15+",
+  InnvandrKat = "A-G") |> 
+  select(Region, år, HovArbStyrkStatus, value) |>
+  pivot_wider(
+    names_from  = HovArbStyrkStatus,
+    values_from = value) |>
+  rename(
+    arbstrk = A,
+    regled_SSB = `A.09`) |>
+  rename(knr24 = Region) |> 
+  filter(!knr24 %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(knr24 = str_sub(knr24, 3, 6),
+         andel_SSB = round((regled_SSB/arbstrk)* 100, 
+                           digits = 2))
+```
+
+```{r}
+arbledSSB24 <- arbledSSB |> 
+  filter(år == "2024") |> 
+  select(-c(år, arbstrk, regled_SSB))
 ```
 
 
@@ -174,6 +205,41 @@ nav_aar <- NAV |>
 # Fjerner NAV tabellen for vi trenger den ikke mer.
  rm(NAV)
 ```
+
+```{r}
+arbledNAV <- read_excel("NavTabell 1995-2024.xlsx",
+                  sheet = 1,
+                  skip = 4,
+                  col_types = "text") 
+```
+
+
+```{r}
+#| warning: false
+arbledNAV <- arbledNAV |> 
+  mutate(knr = str_pad(Kommunenr, 4, "left", "0"),
+         regled_NAV = as.numeric(Beholdning),
+         andel_NAV = as.numeric(`Andel av arbeidsstyrken`)) |> # Strengt tatt ikke nødvendig
+  rename(år = År,
+         mnd = Månedsnummer) |> 
+  select(knr, år, mnd, regled_NAV) |> 
+  left_join(
+    y = newknr,
+    join_by(knr)
+  ) |> 
+  group_by(knr24, år) |> 
+  summarise(regled_NAV = round(mean(regled_NAV),
+                               digits = 0),
+            .groups = "drop") |> 
+  left_join(
+    y = arbledSSB,
+    join_by(knr24, år)
+  ) |> 
+  mutate(andel_NAV = round((regled_NAV/arbstrk)* 100, 
+                           digits = 2))
+```
+
+
 Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å starte. I Norge publiserer både NAV og Statistik sentralbyrå (SSB) tall for arbeidsledighet, men bruker ulike metoder når det kommer til å samle inn data.
 Kilde: https://arbeidsledighet.no/sporsmal-og-svar/
 
