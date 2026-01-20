@@ -256,8 +256,6 @@ arbpl <- pxwebData12(
 
 ```
 
-
-
 ```{r}
 arbpl <- arbpl |>
   select(knr = Region, år, Arbeidssted) |>
