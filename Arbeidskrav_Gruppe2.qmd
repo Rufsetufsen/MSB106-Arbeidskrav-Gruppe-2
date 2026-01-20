@@ -33,68 +33,46 @@ Tabell 07459 på nettsidene til Statistisk Sentralbyrå (SSB) gir for eksempel m
 
 ```{r}
 #| cache: true
-# Total population: kommune x år  
-
 beftot <- PxData12(
   "https://data.ssb.no/api/v0/no/table/07459/",
   Region = list("agg:KommSummer", knr24),
-  Tid    = as.character(1986:2025),
-  Alder  = list("agg:TodeltGrupperingB", c("H17", "H18"))
-) |>
-  select(Region, år, value) |>
-  group_by(Region, år) |>
-  summarise(beftot = sum(value), .groups = "drop") |>
-  rename(kommunenummer = Region) |>
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  Tid = as.character(1986:2025),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  select(Region, år, value) |> 
+  group_by(Region, år) |> 
+  summarise(beftot = sum(value), .groups = "drop") |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
   mutate(kommunenummer = str_sub(kommunenummer, 3, 6))
-
-# Befolkningsendring 1986–2025 (one row per kommune)
-
-bef_endr <- beftot |>
-  group_by(kommunenummer) |>
-  summarise(
-    beftot1986 = beftot[år == 1986][1],
-    beftot2025 = beftot[år == 2025][1],
-    bef_endrtot = if_else(
-      !is.na(beftot1986) & beftot1986 > 0,
-      (beftot2025 / beftot1986) * 100,
-      NA_real_
-    ),
-    .groups = "drop"
-  ) |>
-  select(kommunenummer, bef_endrtot)
-
 ```
 
 ```{r}
 #| cache: true
-# Population by age groups: kommune x år x alder (long)
-
-befald <- PxData12(
+befendr <- PxData12(
   "https://data.ssb.no/api/v0/no/table/07459/",
   Region = list("agg:KommSummer", knr24),
-  Tid    = as.character(1986:2025),
-  Alder  = list(
-    "agg:TiAarigGruppering",
-    c("F00-09", "F10-19", "F20-29", "F30-39", "F40-49",
-      "F50-59", "F60-69", "F70-79", "F80-89", "F90-99", "F100G10+")
-  )
-) |>
-  select(Region, år, alder, value) |>
-  group_by(Region, år, alder) |>
-  summarise(befald = sum(value), .groups = "drop") |>
-  rename(kommunenummer = Region) |>
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
-  mutate(kommunenummer = str_sub(kommunenummer, 3, 6))
-
+  Tid = c("2000", "2025"),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  group_by(Region, år) |> 
+  summarise(beftot = sum(value), .groups = "drop") |> 
+  pivot_wider(
+    names_prefix = "beftot",
+    names_from = år,
+    values_from = beftot
+  ) |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |>
+  mutate(bef_endrtot = (beftot2025/beftot2000)*100) |> 
+  mutate(bef_endrtot = case_when(
+    is.infinite(bef_endrtot) ~ 100,
+    .default = bef_endrtot
+  )) |>
+  select(kommunenummer, bef_endrtot)
 ```
 
 ```{r}
-# Final dataset: kommune x år x alder
-
-bef <- befald |>
-  left_join(beftot, by = c("kommunenummer", "år")) |>
-  left_join(bef_endr,    by = "kommunenummer")
+bef <- left_join(beftot, befendr, by = join_by("kommunenummer"))
 ```
 
 ### Demografiske data.
@@ -144,6 +122,18 @@ demografi <- demografiske_kjonn |>
   summarise(bef = sum(bef, na.rm = TRUE), .groups = "drop")
 
 ```
+
+
+```{r}
+demografi_total <- demografi |>
+  group_by(kommunenummer, år, aldersgruppe) |>
+  summarise(
+    bef = sum(bef, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+```
+
 
 ### Sentralitetsindeksen for norske kommuner.
 
@@ -500,12 +490,14 @@ library(writexl)
 sheets <- list(
   "bef"            = bef,
   "demografi"     = demografi,
+  "demografi_total" = demografi_total,
   "SSb_Arbledig"   = SSb_Arbledig,
   "bolig"          = bolig,
   "utdanning"     = utdanning,
   "flytt"          = flytt,
   "pendl_per1000" = pendl_per1000,
-  "Sentralitet"   = Sentralitet
+  "Sentralitet"   = Sentralitet,
+  "nav_aar"  = nav_aar
 )
 
 write_xlsx(sheets, "data_export.xlsx")
