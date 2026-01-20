@@ -183,10 +183,10 @@ SSb_Arbledig <- PxData12(
   rename(
     arbeidsstyrke = A,
     registrerte_ledige = `A.09`) |>
-  rename(kommunenr = Region) |> 
-  filter(!kommunenr %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
     mutate(
-    kommunenr = str_sub(kommunenr, 3, 6),
+    kommunenummer = str_sub(kommunenummer, 3, 6),
     prosent_arbledig = if_else(
     is.na(arbeidsstyrke) | arbeidsstyrke == 0,
     NA_real_,
@@ -218,7 +218,8 @@ NAV <- NAV |>
 
 # Lager et eget data for nav_aar, der en gjør om månedstall til ett gjennomsnittstall for hvert år i hver kommune.
 nav_aar <- NAV |>
-  group_by(Kommunenr, Kommunenavn, År) |>
+  group_by(Kommunenr, År) |>
+  rename(kommunenummer = Kommunenr, år = År ) |>
   summarise(
     prosent_ledige_i_året = mean(andel, na.rm = TRUE),
     antall_ledige_i_året = mean(beholdning, na.rm = TRUE),
