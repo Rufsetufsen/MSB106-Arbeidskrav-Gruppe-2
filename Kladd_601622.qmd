@@ -59,6 +59,8 @@ library(lubridate)
 library(PxWebApiData)
 library(flextable)
 library(dplyr)
+library(spdep)
+library(sf)
 options(
   paged.print = FALSE,
   scipen = 999
@@ -262,7 +264,22 @@ Som grunnlag for å lage kartvisualiseringer kan dere bruke filen
 knr_kart_norge_kystlinje.gpkg, som dere finner i Canvas. Lag
 kartframstillinger for:
 
-• Prosentvis folketallsvekst for ulike kommuner etter år 2000
+```{r}
+Kart <- st_read(
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Kommuner"
+)
+```
+
+```{r}
+# Prosentvis arbeidsledighet for 2024
+arbledigkart <- Kart |> 
+  left_join(SSb_Arbledig, join_by(kommunenummer))
+```
+
+```{r}
+# Gjennomsnittlig kvadratmeterpris for boliger i 2024
+```
 
 # Litteraturliste
 
