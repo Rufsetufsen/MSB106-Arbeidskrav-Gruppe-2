@@ -63,9 +63,7 @@ load("newknr.rdata")
 
 ## Datainnhenting
 
-Bruk den kommuneinndelingen som gjelder pr 1.
-januar 2026.
-Hent inn data for følgende variable:
+Bruk den kommuneinndelingen som gjelder pr 1. januar 2026. Hent inn data for følgende variable:
 
 ### Folketall.
 
@@ -121,8 +119,7 @@ save(bef, file = "bef.rdata")
 
 ### Demografiske data.
 
-Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen.
-Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike faser i et livsløp.
+Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen. Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike faser i et livsløp.
 
 
 ### Sentralitetsindeksen for norske kommuner.
@@ -131,14 +128,40 @@ Data er lett tilgjengelige på nettsidene til SSB.
 Gjør kort greie for beregningsgrunnlaget for indeksen.
 Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
 
+```{r}
+load("./data/nor_knr24_vec.rdata")
+load("./data/newknr.rdata")
+```
+
+
+```{r}
+#Leser av excel-filene
+sentralitet2017 <-
+  read_xlsx("./data/sentralitet 2017.xlsx")
+sentralitet2020 <- 
+  read_xlsx("./data/sentralitet 2020 kommuner.xlsx")
+sentralitet2023 <-
+  read_xlsx("./data/sentralitet 2023-2024 kommuner.xlsx")
+# Slår sammen tabellene fra 2020/2023 slik at vi kan se utvikling. 
+Sentralitet <-
+  newknr %>%
+  left_join(sentralitet2017, by = c("knr" = "Kommunenummer 2018"), keep = FALSE) %>%
+  left_join(sentralitet2020, by = "knr", keep = FALSE) %>%
+  left_join(sentralitet2023, by = c("knr2023" = "knr 2024"), keep = FALSE)%>%
+  # Sammenligner sentralitetsindeks i 2020 og 2023.  
+  mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`)
+```
+
+Sentralitetsindeksen er en kode som beskriver hver kommunes sentralitet. Beregningen av sentralitetsindeksen er basert på reisetid til arbeidsplasser og servicefunksjoner fra alle bebodde grunnkretser. Indeksen er sammensatt av to del-indekser: - Antall arbeidsplasser de som bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter. - Hvor mange ulike typer servicefunksjoner (varer og tjenester) de som bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter.
+
+Antallet vektes, slik at en arbeidsplass eller servicefunksjon som ligger nært bostedet teller mer enn en som ligger lenger bort. Indeksen fordeles på en kontinuerlig skala fra 0 (minst sentral) til 1000 (mest sentral), og fordeles så inn i 6 forskjellige sentralitetsklasser, basert på kommunens sentralitetsverdi.
+
+Endringer fra 2017 -> 2020 og 2024 skyldes (i følge SSB selv) i stor grad endringer i kommunegrensene. I perioden har det vært flere kommuneoppløsninger/sammenslåinger, og indeksen vil påvirkes ved hver slik grensejustering. 
+I 2017 (ved første kalkulering av indeksen), ble det også gjort noen feil i databehandlingen som senere har blitt rettet opp i. Ved èn kjøring av dataeksport ble det satt en cutoff på antall arbeidsplasser den enkelte kunne nå innen 60 minutter i stedet for de 90 som indeksen skulle baseres på. Dette påvirket resultatet svært mye for de aktuelle områdene (Hordaland, Sogn og Fjordane, Møre og Romsdal, Trøndelag og Nord-Norge).
+
 ### Prosentvis arbeidsledighet.
 
-Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1).
-Dette gir grunnlag for å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024.
-Det er ikke nødvendig å gå inn på alder og innvandringskategori i data.
-Dere finner også på nett 1 en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter for kommuner for perioden 1995-2024).
-Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert på månedsdata.
-Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
+Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1). Dette gir grunnlag for å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024. Det er ikke nødvendig å gå inn på alder og innvandringskategori i data. Dere finner også på nett 1 en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter for kommuner for perioden 1995-2024). Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert på månedsdata. Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
 
 #### Arbeidsledighet fra SSB
 ```{r}
@@ -213,19 +236,14 @@ Kilde: https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-ar
 
 ### Sysselsetting.
 
-Tabell 03321 på nettsidene til SSB gir grunnlag for å finne antall arbeidsplasser i norske kommuner tilbake til år 2000, beregnet i 4.
-kvartal for hvert år.
-Velg sysselsatte personer etter arbeidsstedskommune.
-Bruk den kommuneinndelingen som gjelder i 2026.
+Tabell 03321 på nettsidene til SSB gir grunnlag for å finne antall arbeidsplasser i norske kommuner tilbake til år 2000, beregnet i 4. kvartal for hvert år. Velg sysselsatte personer etter arbeidsstedskommune. Bruk den kommuneinndelingen som gjelder i 2026.
 
 ### Gjennomsnittlig kvadratmeterpris for bolig.
-
 
 Data for boligomsetninger finnes i Tabell 06035 på nettsidene til SSB.
 Data er gitt for alle år i perioden 2002-2024, blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
 Det kan være en god ide å hente informasjon både om eneboliger og leiligheter.
 For en sammenligning på tvers av kommuner kan priser på eneboliger være mest relevant, blant annet siden det er liten omsetning av leiligheter i mange små kommuner.
-
 
 ### Utdanningsnivå.
 
@@ -258,10 +276,7 @@ save(utdan, file = "utdan.rdata")
 
 ### Ut- og innflyttinger pr 1000 innbyggere.
 
-Informasjon om flyttestrømmer i perioden 2010-2024 finnes i Tabell 13255 på nettsidene til SSB.
-Data kan finnes blant annet for den kommuneinndelingen vi har hatt etter 2024.
-Ved å kombinere med data for folketall (se foran) kan en beregne flyttinger pr 1000 innbyggere, til sammenligning mellom kommunene.
-Kommunene kan videre kategoriseres etter om de har netto ut- eller innflytting, og en kan finne data for utflytting pr 1000 innbyggere for alderskategorien 18-29 år, og innflytting pr 1000 innbyggere for de som er 30 år eller eldre.
+Informasjon om flyttestrømmer i perioden 2010-2024 finnes i Tabell 13255 på nettsidene til SSB. Data kan finnes blant annet for den kommuneinndelingen vi har hatt etter 2024. Ved å kombinere med data for folketall (se foran) kan en beregne flyttinger pr 1000 innbyggere, til sammenligning mellom kommunene. Kommunene kan videre kategoriseres etter om de har netto ut- eller innflytting, og en kan finne data for utflytting pr 1000 innbyggere for alderskategorien 18-29 år, og innflytting pr 1000 innbyggere for de som er 30 år eller eldre.
 
 ```{r}
 #| cache: true
@@ -324,7 +339,39 @@ save(flytt, file = "flytt.rdata")
 
 ### Inn- og utpendling.
 
-Innpendlingen kan gjerne måles pr 1000 arbeidsplasser i kommunen, dvs at en kombinerer data for samlet antall innpendlere i Tabell 03321 med data for sysselsetting i kommunen (etter arbeidssted).
-I anslag for utpendling pr 1000 arbeidstakere kombineres data om antall utpendlere med data for antall arbeidstakere (fra Tabell 03321, spesifisert etter bostedskommune).
-Anslag for antall arbeidstakere (etter bostedskommune) kan beregnes ut fra Tabell 03321.
-Denne tabellen kan videre brukes til å finne samlet antall pendlere ut fra kommunene og samlet antall pendlere inn til kommunene.
+Innpendlingen kan gjerne måles pr 1000 arbeidsplasser i kommunen, dvs at en kombinerer data for samlet antall innpendlere i Tabell 03321 med data for sysselsetting i kommunen (etter arbeidssted). I anslag for utpendling pr 1000 arbeidstakere kombineres data om antall utpendlere med data for antall arbeidstakere (fra Tabell 03321, spesifisert etter bostedskommune). Anslag for antall arbeidstakere (etter bostedskommune) kan beregnes ut fra Tabell 03321. Denne tabellen kan videre brukes til å finne samlet antall pendlere ut fra kommunene og samlet antall pendlere inn til kommunene.
+
+
+```{r}
+
+#| warning: false
+
+pendl <- pxwebData12(
+  "11616",
+  Region = list("*"),
+  ContentsCode = c("Bosatt", "Innpendlere", "Utpendlere", "Arbeidssted"),
+  Tid = as.character(2000:2024),
+  Alder = "15-74"
+)
+
+```
+
+
+```{r}
+
+tip <- pendl |>
+  select(knr = Region, år, Bosatt, Innpendlere, Utpendlere, Arbeidssted) |>
+  left_join(newknr, join_by(knr)) |>
+  group_by(knr24, år) |>
+  summarise(Bosatt = sum(Bosatt),
+      Innpendlere = sum(Innpendlere),
+      Utpendlere = sum(Utpendlere),
+      Arbeidssted = sum(Arbeidssted),
+      .groups = "drop") |>
+  filter(knr24 != "9999")
+```
+
+```{r}
+
+```
+
