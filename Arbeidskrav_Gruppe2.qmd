@@ -158,6 +158,12 @@ Sentralitet <-
   mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`)
 ```
 
+```{r}
+Sentralitet <- Sentralitet |>
+  rename("kommunenummer" = knr2023) |>
+  select(-knr)
+```
+
 ### Prosentvis arbeidsledighet.
 
 Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1).
@@ -502,7 +508,19 @@ write_xlsx(sheets, "data_export.xlsx")
 ```
 
 ```{r}
+save(bef, file = "bef.rdata")
+save(demografi, file = "demografi.rdata")
+save(demografi_total, file = "demografi_total.rdata")
+save(SSb_Arbledig, file = "SSb_Arbledig.rdata")
+save(bolig, file = "bolig.rdata")
+save(utdanning, file = "utdanning.rdata")
+save(flytt, file = "flytt.rdata")
+save(pendl_per1000, file = "pendl_per1000.rdata")
+save(Sentralitet, file = "Sentralitet.rdata")
+save(nav_aar, file = "nav_aar.rdata")
+```
 
+```{r}
 load("nor_knr24_vec.rdata")
 load("newknr.rdata")
 load("bef.rdata")
