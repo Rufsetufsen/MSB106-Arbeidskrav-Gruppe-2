@@ -375,3 +375,21 @@ tip <- pendl |>
 
 ```
 
+## Oppgave 2
+
+### Kurver
+
+Lag kurveframstillinger av
+• Folketallsutvikling for årene etter 2000 for ulike sentralitetskategorier av kommuner
+• Utviklingen i andelen av innbyggere i aldersgruppen (20-29) for årene etter 2000, for
+ulike sentralitetskategorier av kommuner
+• Utviklingen i prosentvis arbeidsledighet etter 2008 for ulike sentralitetskategorier av
+kommuner
+• Sysselsettingsvekst for årene etter 2000 for ulike sentralitetskategorier av kommuner
+• Utviklingen i kvadratmeterpriser for boliger etter 2002, for ulike sentralitetskategorier av
+kommuner (vektes med informasjon om antall boligomsetninger, slik at store kommuner
+vektes tyngre enn små i beregning av gjennomsnittet)
+• Utviklingen i andelen av innbyggerne med universitetsutdanning, etter 1970, for ulike
+sentralitetskategorier av kommuner
+• Utviklingen i netto utflytting for ulike sentralitetskategorier av kommuner, etter 2010
+• Utviklingen i netto innpendling for ulike sentralitetskategorier av kommuner, etter 2000
