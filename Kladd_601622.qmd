@@ -78,6 +78,34 @@ write_bib(
 rm(packs)
 ```
 
+```{r}
+#save(bef, file = "bef.rdata")
+#save(demografi, file = "demografi.rdata")
+#save(demografi_total, file = "demografi_total.rdata")
+#save(SSb_Arbledig, file = "SSb_Arbledig.rdata")
+#save(bolig, file = "bolig.rdata")
+#save(utdanning, file = "utdanning.rdata")
+#save(flytt, file = "flytt.rdata")
+#save(pendl_per1000, file = "pendl_per1000.rdata")
+#save(Sentralitet, file = "Sentralitet.rdata")
+#save(nav_aar, file = "nav_aar.rdata")
+```
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+load("bef.rdata")
+load("demografi.rdata")
+load("demografi_total.rdata")
+load("SSb_Arbledig.rdata")
+load("bolig.rdata")
+load("utdanning.rdata")
+load("flytt.rdata")
+load("pendl_per1000.rdata")
+load("Sentralitet.rdata")
+load("nav_aar.rdata")
+```
+
 # Innhentning av data
 
 ## Folketall
