@@ -4,7 +4,6 @@ format: html
 editor: visual
 ---
 
-
 ```{r}
 load("nor_knr24_vec.rdata")
 load("newknr.rdata")
@@ -61,7 +60,7 @@ pendl_begge <- pendl |>
   rename(situasjon = ContentsCode)
 
 ```
- 
+
 ```{r}
 #  Gjør datasettet bredt slik at hver situasjon
 #  (Bosatt, Arbeidssted, Innpendlere, Utpendlere) blir en egen kolonne
@@ -72,7 +71,6 @@ pendl_begge <- pendl_begge |>
     values_from = antall
   )
 ```
-
 
 ```{r}
 # Beregner indikatorene som etterspørres i oppgaven
@@ -98,5 +96,3 @@ pendl_per1000 <- pendl_begge |>
     pendlingsbalanse
   )
 ```
-
-

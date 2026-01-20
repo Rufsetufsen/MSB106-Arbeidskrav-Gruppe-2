@@ -246,7 +246,7 @@ Bruk den kommuneinndelingen som gjelder i 2026.
 ```{r}
 #| warning: false
 
-arbpl <- pxwebData12(
+syss <- pxwebData12(
   "https://data.ssb.no/api/v0/no/table/11616",
   Region = list("*"),
   ContentsCode = c("Arbeidssted"),
@@ -257,7 +257,7 @@ arbpl <- pxwebData12(
 ```
 
 ```{r}
-arbpl <- arbpl |>
+syss <- syss |>
   select(knr = Region, år, Arbeidssted) |>
   left_join(newknr, join_by(knr)) |>
   group_by(knr2023, år) |>
@@ -268,7 +268,7 @@ arbpl <- arbpl |>
 ```
 
 ```{r}
-syssendr0024 <- arbpl |> 
+syssendr0024 <- syss |> 
   filter(år %in% c(2000, 2024)) |> 
    pivot_wider(
      names_prefix = "syss",
@@ -541,7 +541,8 @@ sheets <- list(
   "flytt"          = flytt,
   "pendl_per1000" = pendl_per1000,
   "Sentralitet"   = Sentralitet,
-  "nav_aar"  = nav_aar
+  "nav_aar"  = nav_aar,
+  "syss" = syss
 )
 
 write_xlsx(sheets, "data_export.xlsx")
