@@ -168,7 +168,6 @@ Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinn
 Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
 
 ```{r}
-
 SSb_Arbledig <- PxData12(
   "https://data.ssb.no/api/v0/no/table/13563/",
   Region = list("agg:KommSummer", knr24),
@@ -176,23 +175,22 @@ SSb_Arbledig <- PxData12(
   HovArbStyrkStatus = c("A", "A.09"),
   Alder = "15+",
   InnvandrKat = "A-G") |>
-  select(region, år, HovArbStyrkStatus, value) |>
+  select(Region, år, HovArbStyrkStatus, value) |>
   pivot_wider(
-  names_from  = HovArbStyrkStatus,
-  values_from = value,
-  values_fn   = ~sum(.x, na.rm = TRUE))|>
-  rename(
-    arbeidsstyrke      = A,
-    registrerte_ledige = `A.09`
+    names_from  = HovArbStyrkStatus,
+    values_from = value
   ) |>
-  mutate(
+  rename(
+    arbeidsstyrke = A,
+    registrerte_ledige = `A.09`) |>
+  rename(kommunenr = Region) |> 
+  filter(!kommunenr %in% c("K-21-22", "K-23", "K-Rest")) |> 
+    mutate(
+    kommunenr = str_sub(kommunenr, 3, 6),
     prosent_arbledig = if_else(
-      is.na(arbeidsstyrke) | arbeidsstyrke == 0,
-      NA_real_,
-      100 * registrerte_ledige / arbeidsstyrke
-    )
-  )
-
+    is.na(arbeidsstyrke) | arbeidsstyrke == 0,
+    NA_real_,
+    round(100 * registrerte_ledige / arbeidsstyrke, 2)))
 ```
 
 ```{r}
