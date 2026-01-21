@@ -548,4 +548,279 @@ sheets <- list(
 write_xlsx(sheets, "data_export.xlsx")
 ```
 
- 
+
+
+
+
+
+
+
+
+
+
+
+## Korrelasjonsberegninger
+
+### Folketall og andelen av innbyggerne som er i aldersgruppen (20-29)
+
+```{r}
+cor_folk_2013_2023 <- demografi_total |>
+  group_by(kommunenummer, år) |>
+  summarise(
+    folketall = sum(bef, na.rm = TRUE),
+    bef_20_29 = sum(bef[aldersgruppe == "20-29"], na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    andel_20_29 = bef_20_29 / folketall
+  ) |>
+  filter(år %in% c(2013, 2023)) |>
+  group_by(år) |>
+  summarise(
+    cor = cor(folketall, andel_20_29, use = "complete.obs"),
+    .groups = "drop"
+  ) |>
+  arrange(år)
+
+cor_folk_2013_2023
+
+```
+
+
+Korrelasjonen mellom folketall og andelen innbyggere i alderen 20–29 år er positiv både i 2013 og 2023, og størrelsen på korrelasjonen er relativt stabil over tid.
+
+
+```{r}
+# her har bare indeks 2023 og 2020, ikke har ti-år tidligere
+# rydder sentralitet 
+# library(janitor)
+make_sentralitet_clean <- function(df) {
+  df |>
+    janitor::clean_names() |>
+    select(kommunenummer, indeks_2023, indeks_2020) |>
+    group_by(kommunenummer) |>
+    summarise(
+      indeks_2023 = if (all(is.na(indeks_2023))) NA_real_ else max(indeks_2023, na.rm = TRUE),
+      indeks_2020 = if (all(is.na(indeks_2020))) NA_real_ else max(indeks_2020, na.rm = TRUE),
+      .groups = "drop"
+    )
+}
+sentralitet_clean <- make_sentralitet_clean(Sentralitet)
+
+```
+
+
+### Sentralitetsindeks og andelen av innbyggerne som er i aldersgruppen (20-29)
+
+```{r}
+cor_sent_2020_2023 <- demografi_total |>
+  group_by(kommunenummer, år) |>
+  summarise(
+    andel_20_29 = sum(bef[aldersgruppe == "20-29"], na.rm = TRUE) /
+                  sum(bef, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(år %in% c(2020, 2023)) |>
+  left_join(sentralitet_clean, by = "kommunenummer") |>
+  group_by(år) |>
+  summarise(
+    cor = cor(
+      ifelse(år == 2023, indeks_2023, indeks_2020),
+      andel_20_29,
+      use = "complete.obs"
+    ),
+    .groups = "drop"
+  ) |>
+  arrange(år)
+
+cor_sent_2020_2023
+```
+
+### Sentralitetsindeks og prosentvis arbeidsledighet
+
+```{r}
+cor_ledig_2020_2023 <- SSb_Arbledig |>
+  mutate(
+    kommunenummer = str_pad(as.character(kommunenummer), 4, "left", "0")
+  ) |>
+  filter(år %in% c(2020, 2023)) |>
+  left_join(sentralitet_clean, by = "kommunenummer") |>
+  group_by(år) |>
+  summarise(
+    cor = cor(
+      ifelse(år == 2023, indeks_2023, indeks_2020),
+      prosent_arbledig,
+      use = "complete.obs"
+    ),
+    .groups = "drop"
+  ) |>
+  arrange(år)
+
+cor_ledig_2020_2023
+
+```
+
+
+Korrelasjonen mellom sentralitetsindeks og prosentvis arbeidsledighet er positiv i begge år, men klart sterkere i 2020 (r ≈ 0,41) enn i 2023 (r ≈ 0,17). (kanskje knyttet til covid-19-pandemien)
+
+### Sentralitetsindeks og gjennomsnittlig kvadratmeterpris for bolig
+
+
+```{r}
+cor_bolig_2020_2023 <- bolig |>
+  mutate(
+    kommunenummer = str_pad(
+      as.character(kommunenummer),
+      4, "left", "0"
+    )
+  ) |>
+  filter(
+    år %in% c(2020, 2023),
+    boligtype_txt == "Enebolig"
+  ) |>
+  left_join(sentralitet_clean, by = "kommunenummer") |>
+  group_by(år) |>
+  summarise(
+    cor = cor(
+      ifelse(år == 2023, indeks_2023, indeks_2020),
+      kvpris,
+      use = "complete.obs"
+    ),
+    .groups = "drop"
+  ) |>
+  arrange(år)
+
+cor_bolig_2020_2023
+
+```
+
+
+### Sentralitetsindeks og andelen av innbyggerne med høyere utdanning
+
+
+```{r}
+cor_utd_2020_2023 <- utdanning |>
+  mutate(
+    kommunenummer = str_pad(as.character(kommunenummer), 4, "left", "0")
+  ) |>
+  filter(
+    år %in% c(2020, 2023),
+    nivå %in% c("Universitets- og høgskolenivå, kort",
+                "Universitets- og høgskolenivå, lang")
+  ) |>
+  group_by(kommunenummer, år) |>
+  summarise(
+    andel_hoyere = sum(utdanand, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  left_join(sentralitet_clean, by = "kommunenummer") |>
+  group_by(år) |>
+  summarise(
+    cor = cor(
+      ifelse(år == 2023, indeks_2023, indeks_2020),
+      andel_hoyere,
+      use = "complete.obs"
+    ),
+    .groups = "drop"
+  ) |>
+  arrange(år)
+
+cor_utd_2020_2023
+
+
+```
+
+
+### Sentralitetsindeks og utflytting pr 1000 innbyggere
+
+```{r}
+cor_utflytt_2020_2023 <- flytt |>
+  mutate(
+    kommunenummer = str_pad(as.character(kommunenummer), 4, "left", "0")
+  ) |>
+  filter(år %in% c(2020, 2023)) |>
+  group_by(kommunenummer, år) |>
+  summarise(
+    utper1000_tot = mean(utper1000, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  left_join(sentralitet_clean, by = "kommunenummer") |>
+  group_by(år) |>
+  summarise(
+    cor = cor(
+      ifelse(år == 2023, indeks_2023, indeks_2020),
+      utper1000_tot,
+      use = "complete.obs"
+    ),
+    .groups = "drop"
+  ) |>
+  arrange(år)
+
+cor_utflytt_2020_2023
+
+```
+
+
+### Sentralitetsindeks og innpendling pr 1000 innbyggere
+
+```{r}
+cor_innpend_2020_2023 <- pendl_per1000 |>
+  mutate(
+    kommunenummer = str_pad(as.character(Region), 4, "left", "0")
+  ) |>
+  filter(
+    år %in% c(2020, 2023),
+    !is.na(innpend_per1000_arbpl)
+  ) |>
+  left_join(sentralitet_clean, by = "kommunenummer") |>
+  group_by(år) |>
+  summarise(
+    cor = cor(
+      ifelse(år == 2023, indeks_2023, indeks_2020),
+      innpend_per1000_arbpl,
+      use = "complete.obs"
+    ),
+    .groups = "drop"
+  ) |>
+  arrange(år)
+
+cor_innpend_2020_2023
+
+```
+
+
+### Sentralitetsindeks og utpendling pr 1000 innbyggere
+
+```{r}
+cor_utpend_2020_2023 <- pendl_per1000 |>
+  mutate(
+    kommunenummer = str_pad(as.character(Region), 4, "left", "0")
+  ) |>
+  filter(
+    år %in% c(2020, 2023),
+    !is.na(utpend_per1000_bosatt)
+  ) |>
+  left_join(sentralitet_clean, by = "kommunenummer") |>
+  group_by(år) |>
+  summarise(
+    cor = cor(
+      ifelse(år == 2023, indeks_2023, indeks_2020),
+      utpend_per1000_bosatt,
+      use = "complete.obs"
+    ),
+    .groups = "drop"
+  ) |>
+  arrange(år)
+
+cor_utpend_2020_2023
+
+```
+
+
+
+
+
+
+
+
+
