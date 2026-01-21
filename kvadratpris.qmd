@@ -1,0 +1,71 @@
+---
+title: "Gjennomsnittlig kvadratmeterpris for bolig"
+format: html
+editor: visual
+---
+
+##  
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+```
+
+```{r}
+#| label: setup
+#| message: false
+#| echo: true
+#| warning: false
+
+library(tidyverse)
+library(readxl)
+library(sf)
+library(spdep)
+library(writexl)
+library(PxWebApiData)
+library(modelsummary)
+```
+
+```{r}
+# Hent metadata for tabell 06035
+meta <- ApiData(
+  "https://data.ssb.no/api/v0/no/table/06035/",
+  returnMetaFrames = TRUE
+)
+
+# Finn alle kommuner (4-sifrede kommunenummer)
+# Dette gir kommunenivå i gjeldende inndeling
+kommune_values <- meta$Region |>
+  transmute(kommunenummer = values) |>
+  filter(str_detect(kommunenummer, "^\\d{4}$")) |>
+  pull(kommunenummer)
+
+
+# Hent boligomsetninger fra API
+#    - År: 2002–2024
+#    - Boligtype: Enebolig (01) og Leilighet (03)
+#    - Variabel: Kvadratmeterpris
+bolig <- ApiData12(
+  "https://data.ssb.no/api/v0/no/table/06035/",
+  Region = kommune_values,
+  Tid = as.character(2002:2024),
+  Boligtype = c("01", "03"),
+  ContentsCode = "KvPris"
+) |>
+  select(Region, Tid, Boligtype, value) |>
+  rename(
+    kommunenummer = Region,
+    år = Tid,
+    kvpris = value
+  ) |>
+  mutate(
+    boligtype_txt = case_when(
+      Boligtype == "01" ~ "Enebolig",
+      Boligtype == "03" ~ "Leilighet",
+      TRUE ~ Boligtype
+    )
+  )|>
+  filter(!is.na(kvpris))
+
+
+```

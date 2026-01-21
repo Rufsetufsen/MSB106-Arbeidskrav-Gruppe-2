@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: "Arbeid med kart i RStudio og QGIS"
 author: "Karl-Gunnar Severinsen"
@@ -179,3 +180,166 @@ cor(befcor) |>
                                  diagonal = "1")
 ```
 
+=======
+---
+title: "Arbeid med kart i RStudio og QGIS"
+author: "Karl-Gunnar Severinsen"
+date: last-modified
+date-format: "DD MMMM YYYY"
+format: 
+  pdf:
+    number-sections: true
+    geometry: 
+      - bottom=25mm
+      - left=25mm
+      - right=25mm
+      - top=30mm
+language: 
+    crossref-fig-title: "Figur"
+---
+
+```{r}
+#| label: setup
+#| message: false
+#| echo: true
+#| warning: false
+library(tidyverse)
+library(readxl)
+library(sf)
+library(spdep)
+library(writexl)
+library(PxWebApiData)
+library(modelsummary)
+```
+
+# Å lese inn, bearbeide og koble kart og SSB-data
+
+## Lese inn kart (geopackage)
+
+```{r}
+kyst <- st_read(
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Kommuner"
+)
+```
+
+## Lese inn data fra SSB
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+```
+
+```{r}
+bef <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = c("2000", "2025"),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  select(Region, år, value) |> 
+  group_by(Region, år) |> 
+  summarise(bef = sum(value), .groups = "drop") |> 
+  pivot_wider(
+    names_prefix = "bef",
+    names_from = år,
+    values_from = bef
+  ) |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |> 
+  mutate(bef_endr = (bef2025/bef2000)*100) |> 
+  mutate(bef_endr = case_when(
+    is.infinite(bef_endr) ~ 100,
+    .default = bef_endr
+  ))
+```
+
+## Koble SSB-data med kart
+
+```{r}
+kystssb <- kyst |> 
+  left_join(
+    y = bef,
+    join_by(kommunenummer)
+  )
+```
+
+## Lagre ny versjon av kartet
+
+```{r}
+#| eval: false
+st_write(
+  obj = kystssb,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Befolkning",
+  append = FALSE
+)
+```
+
+# Å identifisere naboer
+
+## Last inn kart
+
+```{r}
+kyst <- st_read(
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Befolkning"
+)
+```
+
+## Lag nabo‑liste med queen‑kontiguitet
+
+*Queen* betyr at både hjørne‑berøring og kant‑berøring gir naboskap:
+
+```{r}
+#| warning: false
+kyst <- kyst |> 
+  arrange(kommunenummer)
+
+knr <- kyst$kommunenummer
+
+nornb <- poly2nb(
+  pl = st_geometry(kyst),
+  queen = TRUE,
+  row.names = kyst$kommunenummer
+)
+
+summary(nornb) # kjapt blikk på nabofordelingen
+```
+
+## Fra nabo‑liste til vektobjekt/matrise
+
+-  style = "W": radstandardiserte vekter (sum = 1 per rad) → perfekt til romlige lag (W·x).
+-  style = "B": binær (0/1) nabomatrise (fint hvis du trenger ren matrise til spesielle formål).
+
+```{r}
+# Radstandardiserte vekter (vanligst)
+norQlist <- nb2listw(nornb, style = "W", zero.policy = TRUE)
+
+# Binær nabomatrise
+norQmat <- nb2mat(nornb, style = "B", zero.policy = TRUE)
+dim(norQmat)      # skal være n_kommuner x n_kommuner
+```
+
+`zero.policy = TRUE` er viktig når dere har øyer uten naboer (isolerte kommuner); da unngår dere feil i berøring, lagberegning osv.
+(Det kommer opp *Warning* dersom `zero.policy = FALSE`, samtidig som man har kommuner uten naboer).
+For norske kommuner med kystklipp og øyer, så har vi over funnet at det er 14 kommuner med 0 naboer.
+
+\newpage
+
+# Tips til fine korrelasjonsmatriser
+
+## Modelsummary
+
+```{r}
+befcor <- bef |> 
+  select(-kommunenummer) 
+
+cor(befcor) |> 
+  datasummary_correlation_format(fmt = 4, 
+                                 leading_zero = TRUE, 
+                                 upper_triangle = ".",
+                                 diagonal = "1")
+```
+
+>>>>>>> karin
