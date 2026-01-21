@@ -587,9 +587,6 @@ cor_folk_2013_2023
 ```
 
 
-Korrelasjonen mellom folketall og andelen innbyggere i alderen 20–29 år er positiv både i 2013 og 2023, og størrelsen på korrelasjonen er relativt stabil over tid.
-
-
 ```{r}
 # her har bare indeks 2023 og 2020, ikke har ti-år tidligere
 # rydder sentralitet 
@@ -660,8 +657,6 @@ cor_ledig_2020_2023
 
 ```
 
-
-Korrelasjonen mellom sentralitetsindeks og prosentvis arbeidsledighet er positiv i begge år, men klart sterkere i 2020 (r ≈ 0,41) enn i 2023 (r ≈ 0,17). (kanskje knyttet til covid-19-pandemien)
 
 ### Sentralitetsindeks og gjennomsnittlig kvadratmeterpris for bolig
 
@@ -817,7 +812,7 @@ cor_utpend_2020_2023
 ```
 
 
-
+### Prosentvis arbeidsledighet og andelen av innbyggerne som er i aldersgruppen (20-29)
 
 
 
