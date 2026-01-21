@@ -1,3 +1,13 @@
+# 601622 changes
+.gitignore
+*.html
+*.doxc
+*.Rproj
+*.pptx
+*.reavealjs
+*.png
+*.pdf
+
 # History files
 .Rhistory
 .Rapp.history

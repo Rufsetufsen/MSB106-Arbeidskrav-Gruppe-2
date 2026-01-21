@@ -18,7 +18,6 @@ language:
 ```{r}
 #| label: setup
 #| message: false
-#| echo: true
 #| warning: false
 library(tidyverse)
 library(readxl)
@@ -27,72 +26,155 @@ library(spdep)
 library(writexl)
 library(PxWebApiData)
 library(modelsummary)
+library(knitr)
+library(lubridate)
+library(flextable)
+library(dplyr)
+options(
+  paged.print = FALSE,
+  scipen = 999
+  )
 ```
 
+```{r}
+#| eval: false
+# Lage en bib fil for brukte R pakker 
+# NB når denne blir kjørt slettes bib filen, og blir laget på nytt
+# må da legge inn vanlige kilder på nytt
+packs <- c(
+  "knitr",
+  "tidyverse",
+  "lubridate",
+  "PxWebApiData",
+  "flextable",
+  "dplyr"
+  )
+write_bib(
+  packs,
+  file = "ArbRef.bib"
+  )
+rm(packs)
+```
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+```
 
 ## Datainnhenting
 
-Bruk den kommuneinndelingen som gjelder pr 1. januar 2026. Hent inn data for følgende
-variable:
-• Folketall. Tabell 07459 på nettsidene til Statistisk Sentralbyrå (SSB) gir for eksempel
-mulighet til å hente årlige befolkningsdata for kommuner tilbake til 1986.
-• Demografiske data. Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen
-fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen.
-Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike
-faser i et livsløp.
-• Sentralitetsindeksen for norske kommuner. Data er lett tilgjengelige på nettsidene
-til SSB. Gjør kort greie for beregningsgrunnlaget for indeksen. Test videre om det har
-vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017,
-2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
-• Prosentvis arbeidsledighet. Tabell 13563 på nettsidene til SSB gir informasjon om
-registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert
-arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1). Dette gir grunnlag for
-å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024. Det er ikke
-nødvendig å gå inn på alder og innvandringskategori i data. Dere finner også på nett
-1
-en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter
-for kommuner for perioden 1995-2024). Her kan det imidlertid bli nødvendig
-å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert
-på månedsdata. Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av
-arbeidsledighet.
-• Sysselsetting. Tabell 03321 på nettsidene til SSB gir grunnlag for å finne antall arbeidsplasser
-i norske kommuner tilbake til år 2000, beregnet i 4. kvartal for hvert år.
-Velg sysselsatte personer etter arbeidsstedskommune. Bruk den kommuneinndelingen
-som gjelder i 2026.
-• Gjennomsnittlig kvadratmeterpris for bolig. Data for boligomsetninger finnes i
-Tabell 06035 på nettsidene til SSB. Data er gitt for alle år i perioden 2002-2024, blant
-annet spesifisert for den kommuneinndelingen vi har hatt etter 2024. Det kan være en
-god ide å hente informasjon både om eneboliger og leiligheter. For en sammenligning på
-tvers av kommuner kan priser på eneboliger være mest relevant, blant annet siden det
-er liten omsetning av leiligheter i mange små kommuner.
-• Utdanningsnivå. Tabell 09429 på nettsidene til SSB gir en lang tidsserie for 1970-2024
-for hvordan befolkningen er sammensatt etter 6 ulike utdanningsnivåer, etter kjønn,
-blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
-• Ut- og innflyttinger pr 1000 innbyggere. Informasjon om flyttestrømmer i perioden
-2010-2024 finnes i Tabell 13255 på nettsidene til SSB. Data kan finnes blant annet for
-den kommuneinndelingen vi har hatt etter 2024. Ved å kombinere med data for folketall
-(se foran) kan en beregne flyttinger pr 1000 innbyggere, til sammenligning mellom kommunene.
-Kommunene kan videre kategoriseres etter om de har netto ut- eller innflytting,
-og en kan finne data for utflytting pr 1000 innbyggere for alderskategorien 18-29 år, og
-innflytting pr 1000 innbyggere for de som er 30 år eller eldre.
-• Inn- og utpendling. Innpendlingen kan gjerne måles pr 1000 arbeidsplasser i kommunen,
-dvs at en kombinerer data for samlet antall innpendlere i Tabell 03321 med data
-for sysselsetting i kommunen (etter arbeidssted). I anslag for utpendling pr 1000 arbeidstakere
-kombineres data om antall utpendlere med data for antall arbeidstakere (fra
-Tabell 03321, spesifisert etter bostedskommune). Anslag for antall arbeidstakere (etter
-bostedskommune) kan beregnes ut fra Tabell 03321. Denne tabellen kan videre brukes
-til å finne samlet antall pendlere ut fra kommunene og samlet antall pendlere inn til
-kommunene.
+Bruk den kommuneinndelingen som gjelder pr 1. januar 2026. Hent inn data for følgende variable:
 
 ### Folketall.
 
 Tabell 07459 på nettsidene til Statistisk Sentralbyrå (SSB) gir for eksempel mulighet til å hente årlige befolkningsdata for kommuner tilbake til 1986.
 
+```{r}
+#| cache: true
+beftot <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = as.character(1986:2025),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  select(Region, år, value) |> 
+  group_by(Region, år) |> 
+  summarise(beftot = sum(value), .groups = "drop") |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6))
+```
+
+```{r}
+#| cache: true
+befendr <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid = c("2000", "2025"),
+  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
+  group_by(Region, år) |> 
+  summarise(beftot = sum(value), .groups = "drop") |> 
+  pivot_wider(
+    names_prefix = "beftot",
+    names_from = år,
+    values_from = beftot
+  ) |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |>
+  mutate(bef_endrtot = (beftot2025/beftot2000)*100) |> 
+  mutate(bef_endrtot = case_when(
+    is.infinite(bef_endrtot) ~ 100,
+    .default = bef_endrtot
+  )) |>
+  select(kommunenummer, bef_endrtot)
+```
+
+```{r}
+bef <- left_join(beftot, befendr, by = join_by("kommunenummer"))
+```
+
+```{r}
+save(bef, file = "bef.rdata")
+```
+
 ### Demografiske data.
 
-Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen.
-Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike faser i et livsløp.
+Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen. Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike faser i et livsløp.
 
+
+```{r}
+# demografiske mellom 1986 og 2025
+
+demografiske_kjonn <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid    = as.character(1986:2025),
+  Kjonn  = c("1","2"),
+  Alder  = list("agg:TiAarigGruppering",
+                c("F00-09","F10-19","F20-29","F30-39","F40-49",
+                  "F50-59","F60-69","F70-79","F80-89","F90-99","F100G10+"))
+) |>
+  select(Region, år, Kjonn, alder, value) |>
+  mutate(
+    kjønn = recode(as.character(Kjonn),
+                   "1"="Menn","2"="Kvinner",
+                   .default=as.character(Kjonn))
+  ) |>
+  group_by(Region, år, kjønn, alder) |>
+  summarise(bef = sum(value, na.rm = TRUE), .groups = "drop") |>
+  rename(kommunenummer = Region) |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |>
+  select(kommunenummer, år, kjønn, alder, bef)
+
+```
+
+```{r}
+# demografi etter aldersgruppe
+demografi <- demografiske_kjonn |>
+  mutate(
+    aldersgruppe = case_when(
+      alder %in% c("0-9 år", "10-19 år") ~ "0-19",
+      alder == "20-29 år"               ~ "20-29",
+      alder %in% c("30-39 år", "40-49 år") ~ "30-45",
+      alder %in% c("50-59 år", "60-69 år") ~ "45-66",
+      TRUE                               ~ "67+"
+    )
+  ) |>
+  group_by(kommunenummer, år, kjønn, aldersgruppe) |>
+  summarise(bef = sum(bef, na.rm = TRUE), .groups = "drop")
+
+```
+
+```{r}
+demografi_total <- demografi |>
+  group_by(kommunenummer, år, aldersgruppe) |>
+  summarise(
+    bef = sum(bef, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+```
 
 ### Sentralitetsindeksen for norske kommuner.
 
@@ -100,19 +182,43 @@ Data er lett tilgjengelige på nettsidene til SSB.
 Gjør kort greie for beregningsgrunnlaget for indeksen.
 Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
 
-### Prosentvis arbeidsledighet.
-
-Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1).
-Dette gir grunnlag for å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024.
-Det er ikke nødvendig å gå inn på alder og innvandringskategori i data.
-Dere finner også på nett 1 en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter for kommuner for perioden 1995-2024).
-Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert på månedsdata.
-Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
 
 ```{r}
-load("nor_knr24_vec.rdata")
-load("newknr.rdata")
+#Leser av excel-filene
+sentralitet2017 <-
+  read_xlsx("./data/sentralitet 2017.xlsx")
+sentralitet2020 <- 
+  read_xlsx("./data/sentralitet 2020 kommuner.xlsx")
+sentralitet2023 <-
+  read_xlsx("./data/sentralitet 2023-2024 kommuner.xlsx")
+# Slår sammen tabellene fra 2020/2023 slik at vi kan se utvikling. 
+Sentralitet <-
+  newknr %>%
+  left_join(sentralitet2017, by = c("knr" = "Kommunenummer 2018"), keep = FALSE) %>%
+  left_join(sentralitet2020, by = "knr", keep = FALSE) %>%
+  left_join(sentralitet2023, by = c("knr2023" = "knr 2024"), keep = FALSE)%>%
+  # Sammenligner sentralitetsindeks i 2020 og 2023.  
+  mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`)
 ```
+
+Sentralitetsindeksen er en kode som beskriver hver kommunes sentralitet. Beregningen av sentralitetsindeksen er basert på reisetid til arbeidsplasser og servicefunksjoner fra alle bebodde grunnkretser. Indeksen er sammensatt av to del-indekser: - Antall arbeidsplasser de som bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter. - Hvor mange ulike typer servicefunksjoner (varer og tjenester) de som bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter.
+
+Antallet vektes, slik at en arbeidsplass eller servicefunksjon som ligger nært bostedet teller mer enn en som ligger lenger bort. Indeksen fordeles på en kontinuerlig skala fra 0 (minst sentral) til 1000 (mest sentral), og fordeles så inn i 6 forskjellige sentralitetsklasser, basert på kommunens sentralitetsverdi.
+
+Endringer fra 2017 -> 2020 og 2024 skyldes (i følge SSB selv) i stor grad endringer i kommunegrensene. I perioden har det vært flere kommuneoppløsninger/sammenslåinger, og indeksen vil påvirkes ved hver slik grensejustering. 
+I 2017 (ved første kalkulering av indeksen), ble det også gjort noen feil i databehandlingen som senere har blitt rettet opp i. Ved èn kjøring av dataeksport ble det satt en cutoff på antall arbeidsplasser den enkelte kunne nå innen 60 minutter i stedet for de 90 som indeksen skulle baseres på. Dette påvirket resultatet svært mye for de aktuelle områdene (Hordaland, Sogn og Fjordane, Møre og Romsdal, Trøndelag og Nord-Norge).
+
+
+```{r}
+Sentralitet <- Sentralitet |>
+  rename("kommunenummer" = knr2023) |>
+  select(-knr)
+```
+
+
+### Prosentvis arbeidsledighet.
+
+Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1). Dette gir grunnlag for å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024. Det er ikke nødvendig å gå inn på alder og innvandringskategori i data. Dere finner også på nett 1 en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter for kommuner for perioden 1995-2024). Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert på månedsdata. Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
 
 #### Arbeidsledighet fra SSB
 ```{r}
@@ -131,37 +237,16 @@ SSb_Arbledig <- PxData12(
   rename(
     arbeidsstyrke = A,
     registrerte_ledige = `A.09`) |>
-  rename(knr24 = Region) |> 
-  filter(!knr24 %in% c("K-21-22", "K-23", "K-Rest")) |> 
+  rename(kommunenummer = Region) |> 
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
     mutate(
-    knr24 = str_sub(knr24, 3, 6),
+    kommunenummer = str_sub(kommunenummer, 3, 6),
     prosent_arbledig = if_else(
     is.na(arbeidsstyrke) | arbeidsstyrke == 0,
     NA_real_,
     round(100 * registrerte_ledige / arbeidsstyrke, 2)))
 ```
 
-```{r}
-arbledSSB <- PxData12(
-  "https://data.ssb.no/api/v0/no/table/13563/",
-  Region = list("agg:KommSummer", knr24),
-  Tid = as.character(2008:2024),
-  HovArbStyrkStatus = c("A", "A.09"), 
-  Alder = "15+",
-  InnvandrKat = "A-G") |> 
-  select(Region, år, HovArbStyrkStatus, value) |>
-  pivot_wider(
-    names_from  = HovArbStyrkStatus,
-    values_from = value) |>
-  rename(
-    arbstrk = A,
-    regled_SSB = `A.09`) |>
-  rename(knr24 = Region) |> 
-  filter(!knr24 %in% c("K-21-22", "K-23", "K-Rest")) |> 
-  mutate(knr24 = str_sub(knr24, 3, 6),
-         andel_SSB = round((regled_SSB/arbstrk)* 100, 
-                           digits = 2))
-```
 
 ```{r}
 arbledSSB24 <- arbledSSB |> 
@@ -172,7 +257,7 @@ arbledSSB24 <- arbledSSB |>
 
 #### Arbeidsledighet fra NAV
 ```{r}
-# Tabellen har noen divverse NA verdier i tabellen
+# NA verdier har ikke blitt fjernet, hvis du lurte :)
 # Leser inn excel tabell NavTabell 1995-2024.xlsx
 NAV <- read_excel("NavTabell 1995-2024.xlsx",
                   sheet = 1,
@@ -193,50 +278,18 @@ NAV <- NAV |>
   ) |>
   filter(Kommunenr != -1)
 
-# Lager en ny tabell for å legge sammen månedene for hver kommune, hvert år og finner gjennomsnittstallet for året.
+# Lager et eget data for nav_aar, der en gjør om månedstall til ett gjennomsnittstall for hvert år i hver kommune.
 nav_aar <- NAV |>
-  group_by(Kommunenr, Kommunenavn, År) |>
+  group_by(Kommunenr, År) |>
+  rename(kommunenummer = Kommunenr, år = År ) |>
   summarise(
     prosent_ledige_i_året = mean(andel, na.rm = TRUE),
     antall_ledige_i_året = mean(beholdning, na.rm = TRUE),
     .groups = "drop"
   )
 
-# Fjerner NAV tabellen for vi trenger den ikke mer.
+# Sletter NAV grunnet til at de viktige tallene vi trenger ligger i nav_aar
  rm(NAV)
-```
-
-```{r}
-arbledNAV <- read_excel("NavTabell 1995-2024.xlsx",
-                  sheet = 1,
-                  skip = 4,
-                  col_types = "text") 
-```
-
-
-```{r}
-#| warning: false
-arbledNAV <- arbledNAV |> 
-  mutate(knr = str_pad(Kommunenr, 4, "left", "0"),
-         regled_NAV = as.numeric(Beholdning),
-         andel_NAV = as.numeric(`Andel av arbeidsstyrken`)) |> # Strengt tatt ikke nødvendig
-  rename(år = År,
-         mnd = Månedsnummer) |> 
-  select(knr, år, mnd, regled_NAV) |> 
-  left_join(
-    y = newknr,
-    join_by(knr)
-  ) |> 
-  group_by(knr24, år) |> 
-  summarise(regled_NAV = round(mean(regled_NAV),
-                               digits = 0),
-            .groups = "drop") |> 
-  left_join(
-    y = arbledSSB,
-    join_by(knr24, år)
-  ) |> 
-  mutate(andel_NAV = round((regled_NAV/arbstrk)* 100, 
-                           digits = 2))
 ```
 
 
@@ -253,35 +306,364 @@ Kilde: https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-ar
 
 ### Sysselsetting.
 
-Tabell 03321 på nettsidene til SSB gir grunnlag for å finne antall arbeidsplasser i norske kommuner tilbake til år 2000, beregnet i 4.
-kvartal for hvert år.
-Velg sysselsatte personer etter arbeidsstedskommune.
-Bruk den kommuneinndelingen som gjelder i 2026.
+Tabell 03321 på nettsidene til SSB gir grunnlag for å finne antall arbeidsplasser i norske kommuner tilbake til år 2000, beregnet i 4. kvartal for hvert år. Velg sysselsatte personer etter arbeidsstedskommune. Bruk den kommuneinndelingen som gjelder i 2026.
+
+```{r}
+#| warning: false
+
+syss <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/11616",
+  Region = list("*"),
+  ContentsCode = c("Arbeidssted"),
+  Tid = as.character(2000:2024),
+  Alder = "15-74"
+)
+
+```
+
+```{r}
+syss <- syss |>
+  select(knr = Region, år, Arbeidssted) |>
+  left_join(newknr, join_by(knr)) |>
+  group_by(knr2023, år) |>
+  summarise(Arbeidssted = sum(Arbeidssted),
+            .groups = "drop") |>
+  filter(knr2023 != "9999") |>
+  rename(kommunenummer = knr2023)
+```
+
+```{r}
+syssendr0024 <- syss |> 
+  filter(år %in% c(2000, 2024)) |> 
+   pivot_wider(
+     names_prefix = "syss",
+     names_from = år,
+     values_from = Arbeidssted
+   ) |> 
+  mutate(syssendr0024 = round(((syss2024-syss2000)/syss2000)*100, digits = 2)) |> 
+  mutate(syssendr0024 = case_when(
+    is.infinite(syssendr0024) ~ 0,
+    .default = syssendr0024
+  )) |> 
+  select(-c(syss2000, syss2024)) 
+```
+
 
 ### Gjennomsnittlig kvadratmeterpris for bolig.
-
 
 Data for boligomsetninger finnes i Tabell 06035 på nettsidene til SSB.
 Data er gitt for alle år i perioden 2002-2024, blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
 Det kan være en god ide å hente informasjon både om eneboliger og leiligheter.
 For en sammenligning på tvers av kommuner kan priser på eneboliger være mest relevant, blant annet siden det er liten omsetning av leiligheter i mange små kommuner.
 
+```{r}
+# Hent metadata for tabell 06035
+meta <- ApiData(
+  "https://data.ssb.no/api/v0/no/table/06035/",
+  returnMetaFrames = TRUE
+)
+
+# Finn alle kommuner (4-sifrede kommunenummer)
+# Dette gir kommunenivå i gjeldende inndeling
+kommune_values <- meta$Region |>
+  transmute(kommunenummer = values) |>
+  filter(str_detect(kommunenummer, "^\\d{4}$")) |>
+  pull(kommunenummer)
+
+
+# Hent boligomsetninger fra API
+#    - År: 2002–2024
+#    - Boligtype: Enebolig (01) og Leilighet (03)
+#    - Variabel: Kvadratmeterpris
+bolig <- ApiData12(
+  "https://data.ssb.no/api/v0/no/table/06035/",
+  Region = kommune_values,
+  Tid = as.character(2002:2024),
+  Boligtype = c("01", "03"),
+  ContentsCode = "KvPris"
+) |>
+  select(Region, Tid, Boligtype, value) |>
+  rename(
+    kommunenummer = Region,
+    år = Tid,
+    kvpris = value
+  ) |>
+  mutate(
+    boligtype_txt = case_when(
+      Boligtype == "01" ~ "Enebolig",
+      Boligtype == "03" ~ "Leilighet",
+      TRUE ~ Boligtype
+    )
+  )|>
+  filter(!is.na(kvpris))
+
+```
 
 ### Utdanningsnivå.
 
 Tabell 09429 på nettsidene til SSB gir en lang tidsserie for 1970-2024 for hvordan befolkningen er sammensatt etter 6 ulike utdanningsnivåer, etter kjønn, blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
 
+
+```{r}
+utdanning <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/09429/",
+  Region = list("*"),
+  Tid = as.character(c(1970, 1980:2024)),
+  Nivaa = c("01", "02a", "11", "03a", "04a", "09a"), # 6 nivå
+  Kjonn = c("1", "2"), # 1 er Menn，og 2 er Kvinner
+  ContentsCode = "Personer"
+) |> 
+  select(Region, år, nivå, Nivaa, Kjonn, Personer) |>
+  rename(knr = Region)
+```
+
+```{r}
+utdanning <- left_join(newknr, utdanning, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  filter(!is.na(kommunenummer)) |>
+  group_by(kommunenummer, år, nivå, Nivaa, Kjonn) |>
+  summarise(
+    Personer = sum(Personer, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    Personer = if_else(Personer == 0, NA_real_, Personer)
+  ) |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  left_join(beftot, by = c("kommunenummer", "år")) |>
+  mutate(
+    utdanand = if_else(
+      is.na(beftot) | beftot == 0 | is.na(Personer),
+      NA_real_,
+      100 * Personer / beftot
+    )
+  )|>
+  filter(
+    !is.na(Personer),
+    !is.na(beftot),
+    !is.na(utdanand)
+  )
+```
+
 ### Ut- og innflyttinger pr 1000 innbyggere.
 
-Informasjon om flyttestrømmer i perioden 2010-2024 finnes i Tabell 13255 på nettsidene til SSB.
-Data kan finnes blant annet for den kommuneinndelingen vi har hatt etter 2024.
-Ved å kombinere med data for folketall (se foran) kan en beregne flyttinger pr 1000 innbyggere, til sammenligning mellom kommunene.
-Kommunene kan videre kategoriseres etter om de har netto ut- eller innflytting, og en kan finne data for utflytting pr 1000 innbyggere for alderskategorien 18-29 år, og innflytting pr 1000 innbyggere for de som er 30 år eller eldre.
+Informasjon om flyttestrømmer i perioden 2010-2024 finnes i Tabell 13255 på nettsidene til SSB. Data kan finnes blant annet for den kommuneinndelingen vi har hatt etter 2024. Ved å kombinere med data for folketall (se foran) kan en beregne flyttinger pr 1000 innbyggere, til sammenligning mellom kommunene. Kommunene kan videre kategoriseres etter om de har netto ut- eller innflytting, og en kan finne data for utflytting pr 1000 innbyggere for alderskategorien 18-29 år, og innflytting pr 1000 innbyggere for de som er 30 år eller eldre.
+
+```{r}
+#| cache: true
+flyttper1000 <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/13255/",
+  Region = list("*"),
+  Tid = as.character(2010:2024),
+  Alder = c("18-29", "30+")) |>
+  select(Region, år, Alder, Innflytting, Utflytting) |> 
+  rename(knr = Region,
+         alder = Alder)
+
+flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år, alder) |>
+  summarise(innflytting = sum(Innflytting),
+            utflytting = sum(Utflytting), 
+            .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  mutate(nettoflytt = innflytting - utflytting) |>
+  left_join(beftot, join_by(kommunenummer, år)) |> 
+  mutate(innper1000 = innflytting/beftot*1000,
+         utper1000 = utflytting/beftot*1000,
+         nettoflyttper1000 = innper1000 - utper1000) |>
+  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
+```
+
+```{r}
+flyttkat <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/13255/",
+  Region = list("*"),
+  Tid = as.character(2010:2024),
+  Alder = c("18-29", "30+")) |>
+  select(Region, år, Innflytting, Utflytting) |> 
+  rename(knr = Region)
+
+flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år) |>
+  summarise(innflytting = sum(Innflytting),
+            utflytting = sum(Utflytting), 
+            .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  left_join(beftot, join_by(kommunenummer, år)) |>
+  mutate(totinnper1000 = innflytting/beftot*1000,
+         totutper1000 = utflytting/beftot*1000,
+         nettototflytt = totinnper1000 - totutper1000) |>
+  select(kommunenummer, år, nettototflytt) |>
+  mutate(kategori = ifelse(nettototflytt > 0, "inn_mest", "ut_mest")) |>
+  select(-nettototflytt)
+```
+
+```{r}
+flytt <- left_join(flyttper1000, flyttkat, by = join_by(kommunenummer, år))
+```
+
+```{r}
+save(flytt, file = "flytt.rdata")
+```
+
+```{r}
+#| warning: false
+flyttper1000 <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/13255/",
+  Region = list("*"),
+  Tid = as.character(2010:2024),
+  Alder = c("18-29", "30+")) |>
+  select(Region, år, Alder, Innflytting, Utflytting) |> 
+  rename(knr = Region,
+         alder = Alder)
+```
+
+```{r}
+flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år, alder) |>
+  summarise(innflytting = sum(Innflytting),
+            utflytting = sum(Utflytting), 
+            .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  mutate(nettoflytt = innflytting - utflytting) |>
+  left_join(beftot, join_by(kommunenummer, år)) |> 
+  mutate(innper1000 = innflytting/beftot*1000,
+         utper1000 = utflytting/beftot*1000,
+         nettoflyttper1000 = innper1000 - utper1000) |>
+  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
+```
+
+```{r}
+#| warning: false
+flyttkat <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/13255/",
+  Region = list("*"),
+  Tid = as.character(2010:2024),
+  Alder = c("18-29", "30+")) |>
+  select(Region, år, Innflytting, Utflytting) |> 
+  rename(knr = Region)
+
+flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
+  rename(kommunenummer = knr2023) |>
+  group_by(kommunenummer, år) |>
+  summarise(innflytting = sum(Innflytting),
+            utflytting = sum(Utflytting), 
+            .groups = "drop") |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  left_join(beftot, join_by(kommunenummer, år)) |>
+  mutate(totinnper1000 = innflytting/beftot*1000,
+         totutper1000 = utflytting/beftot*1000,
+         nettototflytt = totinnper1000 - totutper1000) |>
+  select(kommunenummer, år, nettototflytt) |>
+  mutate(kategori = ifelse(nettototflytt > 0, "inn_mest", "ut_mest")) |>
+  select(-nettototflytt)
+```
+
+```{r}
+flytt <- left_join(flyttper1000, flyttkat, by = join_by(kommunenummer, år))
+```
 
 ### Inn- og utpendling.
 
-Innpendlingen kan gjerne måles pr 1000 arbeidsplasser i kommunen, dvs at en kombinerer data for samlet antall innpendlere i Tabell 03321 med data for sysselsetting i kommunen (etter arbeidssted).
-I anslag for utpendling pr 1000 arbeidstakere kombineres data om antall utpendlere med data for antall arbeidstakere (fra Tabell 03321, spesifisert etter bostedskommune).
-Anslag for antall arbeidstakere (etter bostedskommune) kan beregnes ut fra Tabell 03321.
-Denne tabellen kan videre brukes til å finne samlet antall pendlere ut fra kommunene og samlet antall pendlere inn til kommunene.
+Innpendlingen kan gjerne måles pr 1000 arbeidsplasser i kommunen, dvs at en kombinerer data for samlet antall innpendlere i Tabell 03321 med data for sysselsetting i kommunen (etter arbeidssted). I anslag for utpendling pr 1000 arbeidstakere kombineres data om antall utpendlere med data for antall arbeidstakere (fra Tabell 03321, spesifisert etter bostedskommune). Anslag for antall arbeidstakere (etter bostedskommune) kan beregnes ut fra Tabell 03321. Denne tabellen kan videre brukes til å finne samlet antall pendlere ut fra kommunene og samlet antall pendlere inn til kommunene.
 
+
+```{r}
+#| warning: false
+pendl <- pxwebData12(
+  "11616",
+  Region = list("*"),
+  ContentsCode = c("Bosatt", "Innpendlere", "Utpendlere", "Arbeidssted"),
+  Tid = as.character(2000:2024),
+  Alder = "15-74"
+) |>
+  pivot_longer(
+    cols = c(Bosatt, Innpendlere, Utpendlere, Arbeidssted),
+    names_to = "ContentsCode",
+    values_to = "value"
+  )
+```
+
+```{r}
+# Aggregerer tallene over kjønn ved å summere menn (Kjonn = 1)
+# og kvinner (Kjonn = 2), slik at vi får tall for begge kjønn
+pendl_begge <- pendl |>
+  mutate(
+    Region = as.character(Region),
+    år  = as.integer(år)
+  ) |>
+  # Beholder kun observasjoner for menn og kvinner
+  filter(Kjonn %in% c(1, 2)) |>
+  group_by(Region, år, ContentsCode) |>
+  # Summerer over kjønn ved å gruppere på kommune, år og innhold
+  summarise(
+    antall = sum(value, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  # Gir innholdsvariabelen et mer beskrivende navn
+  rename(situasjon = ContentsCode)
+
+```
+
+```{r}
+#  Gjør datasettet bredt slik at hver situasjon
+#  (Bosatt, Arbeidssted, Innpendlere, Utpendlere) blir en egen kolonne
+
+pendl_begge <- pendl_begge |>
+  pivot_wider(
+    names_from  = situasjon,
+    values_from = antall
+  )
+```
+
+```{r}
+# Beregner indikatorene som etterspørres i oppgaven
+pendl_per1000 <- pendl_begge |>
+  mutate(
+    # Innpendling pr 1000 arbeidsplasser i kommunen
+    innpend_per1000_arbpl = ifelse(Arbeidssted > 0,
+                                   Innpendlere / Arbeidssted * 1000,
+                                   NA_real_),
+
+    # Utpendling pr 1000 arbeidstakere (bosatt i kommunen)
+    utpend_per1000_bosatt = ifelse(Bosatt > 0,
+                                   Utpendlere / Bosatt * 1000,
+                                   NA_real_),
+
+    # (valgfritt) netto pendling
+    pendlingsbalanse = Innpendlere - Utpendlere
+  ) |>
+  select(
+    Region, år,
+    Bosatt, Arbeidssted, Innpendlere, Utpendlere,
+    innpend_per1000_arbpl, utpend_per1000_bosatt,
+    pendlingsbalanse
+  )
+```
+
+```{r}
+library(writexl)
+```
+
+```{r}
+sheets <- list(
+  "bef"            = bef,
+  "demografi"     = demografi,
+  "demografi_total" = demografi_total,
+  "SSb_Arbledig"   = SSb_Arbledig,
+  "bolig"          = bolig,
+  "utdanning"     = utdanning,
+  "flytt"          = flytt,
+  "pendl_per1000" = pendl_per1000,
+  "Sentralitet"   = Sentralitet,
+  "nav_aar"  = nav_aar,
+  "syss" = syss
+)
+
+write_xlsx(sheets, "data_export.xlsx")
+```
+
+ 
