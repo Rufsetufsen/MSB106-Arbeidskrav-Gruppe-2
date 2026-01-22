@@ -99,13 +99,12 @@ load("newknr.rdata")
 load("bef.rdata")
 load("demografi.rdata")
 load("demografi_total.rdata")
-load("SSb_Arbledig.rdata")
 load("bolig.rdata")
 load("utdanning.rdata")
 load("flytt.rdata")
 load("pendl_per1000.rdata")
 load("Sentralitet.rdata")
-load("nav_aar.rdata")
+load("arbledighet.rdata")
 load("syss.rdata")
 load("syssendr0024.rdata")
 ```
@@ -267,6 +266,58 @@ knr_kart_norge_kystlinje.gpkg, som dere finner i Canvas. Lag
 kartframstillinger for:
 
 ```{r}
+NAV <- read_excel("NavTabell 1995-2024.xlsx",
+                  sheet = 1,
+                  skip = 4,
+                  col_types = "text")
+
+NAV <- NAV |>
+  mutate(
+    beholdning = as.numeric(Beholdning),
+    andel = as.numeric(`Andel av arbeidsstyrken`)
+  ) |>
+  filter(Kommunenr != -1)
+
+# Lager et eget data for nav_aar, der en gjør om månedstall til ett gjennomsnittstall for hvert år i hver kommune.
+nav_aarny <- NAV |>
+  group_by(Kommunenr, År) |>
+  rename(kommunenummer = Kommunenr, år = År ) |>
+  summarise(
+    prosent_ledige_i_året = mean(andel, na.rm = TRUE),
+    antall_ledige_i_året = mean(beholdning, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Sletter NAV grunnet til at de viktige tallene vi trenger ligger i nav_aar
+ rm(NAV)
+```
+
+```{r}
+nav_aarny <- nav_aarny |>
+  mutate(knr = str_pad(kommunenummer, 4, "left", "0")) |>
+  left_join(newknr, join_by(knr)) |>
+  group_by(knr2023, år) |>
+  filter(!knr2023 %in% c("K-21-22", "K-23", "K-Rest")) |>
+  select(knr2023, år, prosent_ledige_i_året, antall_ledige_i_året) |>
+  rename(kommunenummer = knr2023)
+```
+
+```{r}
+arbledighet <- left_join(nav_aarny, SSb_Arbledig, join_by(kommunenummer, år))
+```
+
+```{r}
+pendl_per1000 <- pendl_per1000 |>
+  rename(kommunenummer = "Region")
+```
+
+```{r}
+#| echo: false
+save(arbledighet, file = "arbledighet.rdata")
+save(pendl_per1000, file = "pendl_per1000.rdata")
+```
+
+```{r}
 Kart <- st_read(
   dsn = "knr_kart_norge_kystlinje.gpkg",
   layer = "Kommuner"
@@ -274,13 +325,66 @@ Kart <- st_read(
 ```
 
 ```{r}
-# Prosentvis arbeidsledighet for 2024
-arbledigkart <- Kart |> 
-  left_join(SSb_Arbledig, join_by(kommunenummer))
+befKart <- left_join(bef, Kart, join_by(kommunenummer)) 
+demoKart <- left_join(demografi_total, Kart, join_by(kommunenummer))
+arbledighetKart <- left_join(arbledighet, Kart, join_by(kommunenummer))
+boligKart <- left_join(bolig, Kart, join_by(kommunenummer))
+utdanningKart <- left_join(utdanning, Kart, join_by(kommunenummer))
+flyttKart <- left_join(flytt, Kart, join_by(kommunenummer))
+pendlKart <- left_join(pendl_per1000, Kart, join_by(kommunenummer))
+syssendrKart <- left_join(syssendr0024, Kart, join_by(kommunenummer))
 ```
 
 ```{r}
-# Gjennomsnittlig kvadratmeterpris for boliger i 2024
+#| eval: false
+st_write(
+  obj = befKart,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Befolkning",
+  append = FALSE
+)
+st_write(
+  obj = demoKart,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Demografi",
+  append = FALSE
+)
+st_write(
+  obj = arbledighetKart,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Arbeidsledighet",
+  append = FALSE
+)
+st_write(
+  obj = boligKart,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Boliger",
+  append = FALSE
+)
+st_write(
+  obj = utdanningKart,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Utdanning",
+  append = FALSE
+)
+st_write(
+  obj = flyttKart,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Flytting",
+  append = FALSE
+)
+st_write(
+  obj = pendlKart,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Pendling",
+  append = FALSE
+)
+st_write(
+  obj = syssendrKart,
+  dsn = "knr_kart_norge_kystlinje.gpkg",
+  layer = "Sysselsetting",
+  append = FALSE
+)
 ```
 
 # Litteraturliste
