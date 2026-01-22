@@ -102,7 +102,7 @@ load("demografi_total.rdata")
 load("bolig.rdata")
 load("utdanning.rdata")
 load("flytt.rdata")
-load("pendl_per1000.rdata")
+load("pendl.rdata")
 load("Sentralitet.rdata")
 load("arbledighet.rdata")
 load("syss.rdata")
@@ -307,14 +307,24 @@ arbledighet <- left_join(nav_aarny, SSb_Arbledig, join_by(kommunenummer, år))
 ```
 
 ```{r}
-pendl_per1000 <- pendl_per1000 |>
-  rename(kommunenummer = "Region")
+pendl <- pendl_per1000 |>
+  rename(knr = "kommunenummer") |>
+  left_join(newknr, join_by(knr)) |>
+  group_by(knr2023, år) |>
+  summarise(Bosatt = sum(Bosatt),
+            Innpendlere = sum(Innpendlere),
+            Utpendlere = sum(Utpendlere),
+            Arbeidssted = sum(Arbeidssted),
+            .groups = "drop") |>
+  filter(!knr2023 %in% c("K-21-22", "K-23", "K-Rest")) |>
+  rename(kommunenummer = knr2023) |>
+  mutate(nettopend = Innpendlere - Utpendlere)
 ```
 
 ```{r}
 #| echo: false
 save(arbledighet, file = "arbledighet.rdata")
-save(pendl_per1000, file = "pendl_per1000.rdata")
+save(pendl, file = "pendl.rdata")
 ```
 
 ```{r}
@@ -322,6 +332,42 @@ Kart <- st_read(
   dsn = "knr_kart_norge_kystlinje.gpkg",
   layer = "Kommuner"
 )
+```
+
+```{r}
+befKart <- bef |>
+  select(kommunenummer, bef_endrtot) |>
+  left_join(Kart, join_by(kommunenummer)) 
+demoKart <- demografi_total |>
+  filter(år == "2024" & aldersgruppe == "20-29") |>
+  select(kommunenummer, bef) |>
+  left_join(Kart, join_by(kommunenummer))
+arbledighetKart <- arbeidsledighet |>
+  filter(år == "2024") |>
+  select(kommunenummer, prosent_ledige_i_året, prosent_arbledig) |>
+  left_join(Kart, join_by(kommunenummer))
+#syssendrKart <- left_join(syssendr0024, Kart, join_by(kommunenummer))
+boligKart <- bolig |>
+  filter(år == "2024" & boligtype_txt == "Enebolig") |>
+  select(kommunenummer, kvpris) |>
+  left_join(Kart, join_by(kommunenummer))
+utdanningKart <- utdanning |>
+  filter(år == "2024" & (Nivaa == "04a" | Nivaa == "03a")) |>
+  select(kommunenummer, utdanand) |>
+  group_by(kommunenummer) |>
+  summarise(utdanand = sum(utdanand), .groups = "drop") |>
+  left_join(Kart, join_by(kommunenummer))
+flyttKart <- flytt |>
+  filter(år == "2024") |>
+  select(kommunenummer, nettoflyttper1000, kategori) |>
+  group_by(kommunenummer) |>
+  summarise(nettoflyttper1000 = sum(nettoflyttper1000), .groups = "drop") |>
+  left_join(Kart, join_by(kommunenummer))
+pendlKart <- pendl |>
+  filter(år == "2024") |>
+  mutate(nettopendper1000 = nettopend/Arbeidssted*1000) |>
+  select(kommunenummer, nettopendper1000) |>
+  left_join(Kart, join_by(kommunenummer))
 ```
 
 ```{r}
