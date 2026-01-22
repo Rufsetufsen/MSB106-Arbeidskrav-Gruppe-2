@@ -61,6 +61,7 @@ library(flextable)
 library(dplyr)
 library(spdep)
 library(sf)
+library(readxl)
 options(
   paged.print = FALSE,
   scipen = 999
@@ -296,7 +297,6 @@ nav_aarny <- NAV |>
 nav_aarny <- nav_aarny |>
   mutate(knr = str_pad(kommunenummer, 4, "left", "0")) |>
   left_join(newknr, join_by(knr)) |>
-  group_by(knr2023, år) |>
   filter(!knr2023 %in% c("K-21-22", "K-23", "K-Rest")) |>
   select(knr2023, år, prosent_ledige_i_året, antall_ledige_i_året) |>
   rename(kommunenummer = knr2023)
@@ -342,9 +342,9 @@ demoKart <- demografi_total |>
   filter(år == "2024" & aldersgruppe == "20-29") |>
   select(kommunenummer, bef) |>
   left_join(Kart, join_by(kommunenummer))
-arbledighetKart <- arbeidsledighet |>
+arbledighetKart <- arbledighet |>
   filter(år == "2024") |>
-  select(kommunenummer, prosent_ledige_i_året, prosent_arbledig) |>
+  select(kommunenummer, prosent_ledige_i_året) |>
   left_join(Kart, join_by(kommunenummer))
 #syssendrKart <- left_join(syssendr0024, Kart, join_by(kommunenummer))
 boligKart <- bolig |>
