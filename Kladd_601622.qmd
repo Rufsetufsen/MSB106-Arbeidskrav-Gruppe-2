@@ -106,6 +106,8 @@ load("flytt.rdata")
 load("pendl_per1000.rdata")
 load("Sentralitet.rdata")
 load("nav_aar.rdata")
+load("syss.rdata")
+load("syssendr0024.rdata")
 ```
 
 # Innhentning av data
