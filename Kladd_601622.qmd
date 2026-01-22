@@ -346,7 +346,7 @@ arbledighetKart <- arbledighet |>
   filter(år == "2024") |>
   select(kommunenummer, prosent_ledige_i_året) |>
   left_join(Kart, join_by(kommunenummer))
-#syssendrKart <- left_join(syssendr0024, Kart, join_by(kommunenummer))
+syssendrKart <- left_join(syssendr0024, Kart, join_by(kommunenummer))
 boligKart <- bolig |>
   filter(år == "2024" & boligtype_txt == "Enebolig") |>
   select(kommunenummer, kvpris) |>
@@ -371,18 +371,9 @@ pendlKart <- pendl |>
 ```
 
 ```{r}
-befKart <- left_join(bef, Kart, join_by(kommunenummer)) 
-demoKart <- left_join(demografi_total, Kart, join_by(kommunenummer))
-arbledighetKart <- left_join(arbledighet, Kart, join_by(kommunenummer))
-boligKart <- left_join(bolig, Kart, join_by(kommunenummer))
-utdanningKart <- left_join(utdanning, Kart, join_by(kommunenummer))
-flyttKart <- left_join(flytt, Kart, join_by(kommunenummer))
-pendlKart <- left_join(pendl_per1000, Kart, join_by(kommunenummer))
-syssendrKart <- left_join(syssendr0024, Kart, join_by(kommunenummer))
-```
-
-```{r}
 #| eval: false
+#| warning: false
+#| message: false
 st_write(
   obj = befKart,
   dsn = "knr_kart_norge_kystlinje.gpkg",
