@@ -115,11 +115,6 @@ load("syssendr0024.rdata")
 ## Folketall
 
 ```{r}
-load("nor_knr24_vec.rdata")
-load("newknr.rdata")
-```
-
-```{r}
 #| cache: true
 beftot <- PxData12(
   "https://data.ssb.no/api/v0/no/table/07459/",
