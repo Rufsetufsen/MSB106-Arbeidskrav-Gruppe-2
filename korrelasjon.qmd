@@ -1,5 +1,5 @@
 ---
-title: "nykorrelasjon"
+title: "korrelasjon"
 format: html
 editor: visual
 ---
@@ -25,7 +25,6 @@ load("pendl_per1000.rdata")
 load("Sentralitet.rdata")
 load("arbledighet.rdata")
 load("syss.rdata")
-load("syssendr0024.rdata")
 ```
 
 ```{r}
@@ -366,5 +365,64 @@ cor_nettoflytt_netto_utpend_2013_2023 <- flytt_std %>%
             by = c("kommunenummer", "år")) %>%
   cor_by_year(nettoflytt_per1000, pendlingsbalanse)
 cor_nettoflytt_netto_utpend_2013_2023
+
+```
+
+# netto utpendling og bolig kvpris i tilgrensende kommuner
+
+```{r}
+#| warning: false
+# library(sf)
+# library(spdep)
+# library(dplyr)
+# library(stringr)
+# library(tibble)
+
+dsn <- "WFS:https://wfs.geonorge.no/skwms1/wfs.inspire-au?service=WFS"
+
+# 1) Kommunegrenser + naboskap
+sf::sf_use_s2(FALSE)
+
+kommune_sf <- st_read(dsn, layer = "au:AdministrativeUnit", quiet = TRUE) %>%
+  rename(kommunenummer = nationalCode) %>%
+  mutate(kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0")) %>%
+  st_make_valid()
+
+nb <- spdep::poly2nb(kommune_sf, queen = TRUE)
+
+# Lag edge-list i (kommune) -> j (nabo), og map til kommunenummer
+knr <- kommune_sf$kommunenummer
+edges_knr <- dplyr::bind_rows(lapply(seq_along(nb), function(i) {
+  j <- nb[[i]]
+  if (length(j) == 0) return(NULL)
+  tibble::tibble(kommunenummer = knr[i], nabo_knr = knr[j])
+})) %>%
+  dplyr::distinct()
+
+# 2) Enebolig kvpris per kommune-år (unik) + nabo-gjennomsnitt
+kvpris_ene <- bolig %>%
+  mutate(
+    kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+    år = as.integer(år)
+  ) %>%
+  filter(boligtype_txt == "Enebolig") %>%
+  summarise(kvpris = mean(kvpris, na.rm = TRUE), .by = c(kommunenummer, år)) %>%
+  mutate(kvpris = dplyr::if_else(is.finite(kvpris), kvpris, NA_real_))
+
+kvpris_nabo_mean <- edges_knr %>%
+  left_join(kvpris_ene, by = c("nabo_knr" = "kommunenummer")) %>%
+  summarise(kvpris_nabo_mean = mean(kvpris, na.rm = TRUE), .by = c(kommunenummer, år))
+
+# 3) Koble til netto utpendling og beregn korrelasjon
+cor_netto_utpend_nabo_kvpris_2013_2023 <- pendl_std %>%
+  select(kommunenummer, år, pendlingsbalanse) %>%
+  left_join(kvpris_nabo_mean, by = c("kommunenummer", "år")) %>%
+  filter(år %in% c(2013, 2023)) %>%
+  summarise(
+    cor = cor(pendlingsbalanse, kvpris_nabo_mean, use = "complete.obs"),
+    .by = år
+  ) %>%
+  arrange(år)
+cor_netto_utpend_nabo_kvpris_2013_2023
 
 ```
