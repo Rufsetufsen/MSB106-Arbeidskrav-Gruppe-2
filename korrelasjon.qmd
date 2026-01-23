@@ -380,7 +380,7 @@ cor_nettoflytt_netto_utpend_2013_2023
 
 dsn <- "WFS:https://wfs.geonorge.no/skwms1/wfs.inspire-au?service=WFS"
 
-# 1) Kommunegrenser + naboskap
+# Kommunegrenser + naboskap
 sf::sf_use_s2(FALSE)
 
 kommune_sf <- st_read(dsn, layer = "au:AdministrativeUnit", quiet = TRUE) %>%
@@ -399,7 +399,7 @@ edges_knr <- dplyr::bind_rows(lapply(seq_along(nb), function(i) {
 })) %>%
   dplyr::distinct()
 
-# 2) Enebolig kvpris per kommune-år (unik) + nabo-gjennomsnitt
+# Enebolig kvpris per kommune-år (unik) + nabo-gjennomsnitt
 kvpris_ene <- bolig %>%
   mutate(
     kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
@@ -413,7 +413,7 @@ kvpris_nabo_mean <- edges_knr %>%
   left_join(kvpris_ene, by = c("nabo_knr" = "kommunenummer")) %>%
   summarise(kvpris_nabo_mean = mean(kvpris, na.rm = TRUE), .by = c(kommunenummer, år))
 
-# 3) Koble til netto utpendling og beregn korrelasjon
+# Koble til netto utpendling og beregn korrelasjon
 cor_netto_utpend_nabo_kvpris_2013_2023 <- pendl_std %>%
   select(kommunenummer, år, pendlingsbalanse) %>%
   left_join(kvpris_nabo_mean, by = c("kommunenummer", "år")) %>%
