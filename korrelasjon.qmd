@@ -82,11 +82,13 @@ sent_long <- Sentralitet %>%
   mutate(år = readr::parse_number(år)) %>%
   select(kommunenummer, år, indeks)
 
-# Arbeidsledighet: standardiser variabelnavn til ledig (varierte i originalkoden)
+# Arbeidsledighet: standardiser variabelnavn til ledig
 ledig <- arbledighet %>%
   std_k(kommunenummer) %>%
   std_year(år) %>%
-  transmute(kommunenummer, år, ledig = prosent_ledige_i_året)
+  transmute(kommunenummer, år, ledig = prosent_arbledig) %>%
+  filter(!is.na(ledig))
+
 
 # Enebolig kvadratmeterpris
 kvpris_ene <- bolig %>%
@@ -426,3 +428,89 @@ cor_netto_utpend_nabo_kvpris_2013_2023 <- pendl_std %>%
 cor_netto_utpend_nabo_kvpris_2013_2023
 
 ```
+
+# Sammenhengen mellom befolkning og sysselsetting
+
+```{r}
+# Dette konstruerer et paneldatasett på formen (kommunenummer, år, befolkning, sysselsetting).
+# Siden datakildene dekker ulike år, avgrenses utvalget automatisk til observasjoner som finnes i begge.
+
+panel_bef_syss <- demografi_total %>%
+  # Standardiser nøkkelvariabler (kommunenummer som 4-sifret streng og år som heltall)
+  mutate(
+    kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+    år = as.integer(år)
+  ) %>%
+  # Aggreger til total befolkning per kommune og år (summerer over aldersgrupper)
+  group_by(kommunenummer, år) %>%
+  summarise(
+    befolkning = sum(bef, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  # Koble på sysselsetting fra syss (arbeidssted) uten å lagre mellomdatasett
+  left_join(
+    syss %>%
+      mutate(
+        kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+        år = as.integer(år),
+        sysselsetting = Arbeidssted
+      ) %>%
+      select(kommunenummer, år, sysselsetting),
+    by = c("kommunenummer", "år")
+  ) %>%
+  # Beholder kun kommune-år som finnes i begge datakilder (implisitt felles år) og som har gyldige verdier
+  filter(
+    !is.na(befolkning),
+    !is.na(sysselsetting)
+  )
+
+```
+
+
+```{r}
+# Pooled regresjon (uten kommune- og årsspesifikasjon)
+
+# Konstruerer et paneldatasett på kommune-år-nivå (kommunenummer, år, befolkning, sysselsetting).
+# Utvalget begrenses til kommune-år-observasjoner som finnes i begge datakilder.
+
+m_pooled <- lm(sysselsetting ~ befolkning, data = panel_bef_syss)
+```
+
+
+```{r}
+# Regresjon med faste effekter for både kommune og år (two-way fixed effects)
+
+# Kommune-faste effekter kontrollerer for tidinvariante kommuneegenskaper, mens år-faste effekter kontrollerer for felles nasjonale sjokk og trender. Standardfeil er klustret på kommunenivå.
+
+m_fe <- fixest::feols(
+  sysselsetting ~ befolkning | kommunenummer + år,
+  data = panel_bef_syss,
+  cluster = ~ kommunenummer
+)
+
+```
+
+
+```{r}
+library(modelsummary)
+
+# Tabellen sammenligner koeffisienten til befolkning i pooled-modellen og i FE-modellen.
+# Dette gjør det enkelt å se hvordan kontroll for kommune- og årsfaste effekter påvirker estimatet.
+
+modelsummary(
+  list(
+    "Pooled OLS" = m_pooled,
+    "Kommune + år FE" = m_fe
+  ),
+  stars = TRUE,
+  statistic = "({std.error})",
+  gof_omit = "IC|Log|Adj|F|RMSE"
+)
+
+```
+
+
+
+
+
+
