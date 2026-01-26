@@ -727,6 +727,7 @@ load("arbledighet.RData")
 load("syss.RData")
 ```
 
+#### Gjennomsnittlig folketall per sentralitetsklasse
 
 ```{r}
 # Gjennomsnittlig folketall per sentralitetsklasse - med facets (for lesbarhet)
@@ -760,6 +761,8 @@ ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
   theme(strip.text = element_text(face = "bold"),
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
+#### Andel innbyggere 20-29 år etter sentralitetskategori
 
 ```{r}
 # Merge aldersdata med sentralitetsdata
@@ -812,6 +815,8 @@ ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
   theme(strip.text = element_text(face = "bold"))
 ```
 
+#### Arbeidsledighet etter sentralitetskategori
+
 ```{r}
 aled_merged <- arbledighet %>%
   mutate(år = as.numeric(as.character(år))) %>%
@@ -842,6 +847,8 @@ ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet,
   theme_minimal() +
   theme(legend.position = "right")
 ```
+
+#### Sysselsettingsvekst etter sentralitetskategori
 
 ```{r}
 # Merge sysselsettingdata med sentralitetsdata
