@@ -726,6 +726,7 @@ load("demografi_total.RData")
 load("arbledighet.RData")
 load("syss.RData")
 load("bolig2.RData")
+load("pendl.RData")
 ```
 
 #### Gjennomsnittlig folketall per sentralitetsklasse
@@ -1004,6 +1005,51 @@ ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel,
   theme(legend.position = "right")
 
 ```
+
+####Utvikling i pendling
+
+```{r}
+pendl_merged <- pendl %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne gjennomsnittlig netto innpendling per sentralitetsklasse per år (etter 2000)
+pendl_snitt <- pendl_merged %>%
+  filter(år > 2000) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_nettopend = mean(nettopend, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage fasettert graf
+ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2001, 2025, by = 5)) +
+  labs(title = "Netto innpendling etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig netto innpendling per kommune, 2001-",
+       x = "År",
+       y = "Netto innpendling (antall personer)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
+```
+
 
 Lag kurveframstillinger av
 • Folketallsutvikling for årene etter 2000 for ulike sentralitetskategorier av kommuner
