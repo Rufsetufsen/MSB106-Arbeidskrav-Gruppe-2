@@ -229,8 +229,8 @@ Dette påvirket resultatet svært mye for de aktuelle områdene (Hordaland, Sogn
 
 ```{r}
 Sentralitet <- Sentralitet |>
-  rename("kommunenummer" = knr2023) |>
-  select(-knr)
+  rename("kommunenummer" = knr2023)
+ ## select(-knr) Kommenterer ut denne da den ga følgefeil i grafene.
 ```
 
 ### Prosentvis arbeidsledighet.
@@ -497,8 +497,7 @@ flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
   left_join(beftot, join_by(kommunenummer, år)) |> 
   mutate(innper1000 = innflytting/beftot*1000,
          utper1000 = utflytting/beftot*1000,
-         nettoflyttper1000 = innper1000 - utper1000) |>
-  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
+         nettoflyttper1000 = innper1000 - utper1000)
 ```
 
 ```{r}
@@ -693,3 +692,426 @@ sheets <- list(
 
 write_xlsx(sheets, "data_export.xlsx")
 ```
+
+
+
+```{r}
+
+tip <- pendl |>
+  select(knr = Region, år, Bosatt, Innpendlere, Utpendlere, Arbeidssted) |>
+  left_join(newknr, join_by(knr)) |>
+  group_by(knr24, år) |>
+  summarise(Bosatt = sum(Bosatt),
+      Innpendlere = sum(Innpendlere),
+      Utpendlere = sum(Utpendlere),
+      Arbeidssted = sum(Arbeidssted),
+      .groups = "drop") |>
+  filter(knr24 != "9999")
+```
+
+```{r}
+
+```
+
+## Oppgave 2
+
+### Kurver
+
+```{r}
+# Laster inn rdata-filene vi skal bruke til å lage kurver.
+load("Sentralitet.RData")
+load("bef.RData")
+load("demografi_total.RData")
+load("arbledighet.RData")
+load("syss.RData")
+load("bolig2.RData")
+load("pendl.RData")
+load("flyttper1000.RData")
+
+```
+
+#### Gjennomsnittlig folketall per sentralitetsklasse
+
+```{r}
+# Gjennomsnittlig folketall per sentralitetsklasse - med facets (for lesbarhet)
+bef_snitt <- bef_merged %>%
+  filter(år > 2000) %>%
+  filter(!is.na(`Klasse 2023`)) %>%
+  mutate(år = as.numeric(as.character(år))) %>%  # Konverter år til numerisk
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_folketall = mean(beftot, na.rm = TRUE),
+            .groups = "drop")
+
+ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  labs(title = "Folketallsutvikling etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig folketall per kommune, 2001-",
+       x = "År",
+       y = "Gjennomsnittlig folketall") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Andel innbyggere 20-29 år etter sentralitetskategori
+
+```{r}
+# Merge aldersdata med sentralitetsdata
+demo_merged <- demografi_total %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne totalt folketall per kommune per år (for å regne ut andeler)
+demo_totalt <- demo_merged %>%
+  filter(år > 2000) %>%
+  group_by(kommunenummer, år, `Klasse 2023`) %>%
+  summarise(totalt_bef = sum(bef, na.rm = TRUE),
+            .groups = "drop")
+
+# Merge tilbake og beregne andeler
+demo_andeler <- demo_merged %>%
+  filter(år > 2000) %>%
+  left_join(demo_totalt, by = c("kommunenummer", "år", "Klasse 2023")) %>%
+  mutate(andel = bef / totalt_bef * 100)
+
+# Kun aldersgruppen 20-29
+demo_snitt_20_29 <- demo_andeler %>%
+  filter(aldersgruppe == "20-29") %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_andel = mean(andel, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf
+ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  labs(title = "Andel innbyggere 20-29 år etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig andel per kommune, 2001-",
+       x = "År",
+       y = "Andel av befolkningen (%)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
+```
+
+#### Arbeidsledighet etter sentralitetskategori
+
+```{r}
+aled_merged <- arbledighet %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne gjennomsnittlig arbeidsledighet per sentralitetsklasse per år (etter 2008)
+aled_snitt <- aled_merged %>%
+  filter(år > 2008) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_ledighet = mean(prosent_ledige_i_året, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf - alle klasser i samme plot
+ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet, 
+                        color = factor(`Klasse 2023`),
+                        group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = seq(2009, 2025, by = 2)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Arbeidsledighet etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig prosent arbeidsledige per kommune, 2009-",
+       x = "År",
+       y = "Arbeidsledighet (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+#### Sysselsettingsvekst etter sentralitetskategori
+
+```{r}
+# Merge sysselsettingdata med sentralitetsdata
+syss_merged <- syss %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne totalt antall sysselsatte per sentralitetsklasse per år
+syss_totalt <- syss_merged %>%
+  filter(år > 2000) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(totalt_sysselsatte = sum(Arbeidssted, na.rm = TRUE),
+            .groups = "drop")
+
+# Beregne prosentvis vekst år til år
+syss_vekst <- syss_totalt %>%
+  arrange(`Klasse 2023`, år) %>%
+  group_by(`Klasse 2023`) %>%
+  mutate(vekst_prosent = (totalt_sysselsatte - lag(totalt_sysselsatte)) / lag(totalt_sysselsatte) * 100) %>%
+  ungroup() %>%
+  filter(!is.na(vekst_prosent))  # Fjerner første år (ingen vekst å beregne)
+
+# Lage graf - alle klasser i samme plot
+ggplot(syss_vekst, aes(x = år, y = vekst_prosent, 
+                        color = factor(`Klasse 2023`),
+                        group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 3)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Sysselsettingsvekst etter sentralitetskategori",
+       subtitle = "Prosentvis endring fra forrige år, 2001-",
+       x = "År",
+       y = "Sysselsettingsvekst (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+#### Kvadratmeterpris bolig
+
+```{r}
+# Merge boligdata med sentralitetsdata
+bolig_merged <- bolig2 %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne vektet gjennomsnittlig kvadratmeterpris per sentralitetsklasse per år (etter 2002)
+# Vektes med antall omsetninger
+bolig_vektet <- bolig_merged %>%
+  filter(år > 2002) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(vektet_kvpris = sum(kvpris * antall_omsetninger, na.rm = TRUE) / 
+                            sum(antall_omsetninger, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf - alle klasser i samme plot
+ggplot(bolig_vektet, aes(x = år, y = vektet_kvpris, 
+                          color = factor(`Klasse 2023`),
+                          group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = seq(2003, 2025, by = 3)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Utviklingen i kvadratmeterpriser for boliger etter sentralitetskategori",
+       subtitle = "Vektet gjennomsnitt (alle boligtyper), 2003-",
+       x = "År",
+       y = "Kvadratmeterpris (kr)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+
+```{r}
+# Vektet pris per boligtype
+bolig_vektet_type <- bolig_merged %>%
+  filter(år > 2002) %>%
+  group_by(år, `Klasse 2023`, boligtype_txt) %>%
+  summarise(vektet_kvpris = sum(kvpris * antall_omsetninger, na.rm = TRUE) / 
+                            sum(antall_omsetninger, na.rm = TRUE),
+            .groups = "drop")
+
+ggplot(bolig_vektet_type, aes(x = år, y = vektet_kvpris, 
+                               color = factor(`Klasse 2023`),
+                               linetype = boligtype_txt,
+                               group = interaction(`Klasse 2023`, boligtype_txt))) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
+  scale_x_continuous(breaks = seq(2003, 2025, by = 3)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  scale_linetype_discrete(name = "Boligtype") +
+  labs(title = "Utviklingen i kvadratmeterpriser for boliger etter sentralitetskategori",
+       subtitle = "Vektet gjennomsnitt etter boligtype, 2003-",
+       x = "År",
+       y = "Kvadratmeterpris (kr)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+#### Utvikling i utdanning
+
+```{r}
+# Merge utdanningsdata med sentralitetsdata
+utd_merged <- utdanning %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),  # Tar kun første forekomst av hver kommune
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Filtrer kun universitetsutdanning (både kort og lang) og etter 1970
+# Summere andeler per kommune per år (slår sammen kjønn)
+utd_total <- utd_merged %>%
+  filter(år > 1970) %>%
+  filter(grepl("universitet", nivå, ignore.case = TRUE)) %>%
+  group_by(kommunenummer, år, `Klasse 2023`) %>%
+  summarise(total_andel_uni = sum(utdanand, na.rm = TRUE),
+            .groups = "drop")
+
+# Beregne gjennomsnittlig andel per sentralitetsklasse per år
+utd_snitt <- utd_total %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_andel = mean(total_andel_uni, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf - alle klasser i samme plot
+ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel, 
+                       color = factor(`Klasse 2023`),
+                       group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = seq(1970, 2025, by = 5)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Andel innbyggere med universitetsutdanning etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1971-",
+       x = "År",
+       y = "Andel med universitetsutdanning (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+```
+
+####Utvikling i netto innflytting
+
+```{r}
+flytt_merged <- flyttper1000 %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne netto utflytting (negativt nettoflytt = utflytting)
+# Beregne gjennomsnitt per sentralitetsklasse per år (etter 2010)
+flytt_snitt <- flytt_merged %>%
+  filter(år > 2010) %>%
+  mutate(netto_utflytt = -nettoflytt) %>%  # Gjør om til utflytting (positiv verdi = netto utflytting)
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_netto_utflytt = mean(netto_utflytt, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage fasettert graf
+ggplot(flytt_snitt, aes(x = år, y = gjsnitt_netto_utflytt)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2011, 2025, by = 3)) +
+  labs(title = "Netto utflytting etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig netto utflytting per kommune, 2011-",
+       x = "År",
+       y = "Netto utflytting (antall personer)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
+```
+
+
+####Utvikling i netto innpendling
+
+```{r}
+pendl_merged <- pendl %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne gjennomsnittlig netto innpendling per sentralitetsklasse per år (etter 2000)
+pendl_snitt <- pendl_merged %>%
+  filter(år > 2000) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_nettopend = mean(nettopend, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage fasettert graf
+ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2001, 2025, by = 5)) +
+  labs(title = "Netto innpendling etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig netto innpendling per kommune, 2001-",
+       x = "År",
+       y = "Netto innpendling (antall personer)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
+```
+
+
+
+Lag kurveframstillinger av
+• Folketallsutvikling for årene etter 2000 for ulike sentralitetskategorier av kommuner
+• Utviklingen i andelen av innbyggere i aldersgruppen (20-29) for årene etter 2000, for
+ulike sentralitetskategorier av kommuner
+• Utviklingen i prosentvis arbeidsledighet etter 2008 for ulike sentralitetskategorier av
+kommuner
+• Sysselsettingsvekst for årene etter 2000 for ulike sentralitetskategorier av kommuner
+• Utviklingen i kvadratmeterpriser for boliger etter 2002, for ulike sentralitetskategorier av
+kommuner (vektes med informasjon om antall boligomsetninger, slik at store kommuner
+vektes tyngre enn små i beregning av gjennomsnittet)
+• Utviklingen i andelen av innbyggerne med universitetsutdanning, etter 1970, for ulike
+sentralitetskategorier av kommuner
+• Utviklingen i netto utflytting for ulike sentralitetskategorier av kommuner, etter 2010
+• Utviklingen i netto innpendling for ulike sentralitetskategorier av kommuner, etter 2000
+
