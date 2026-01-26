@@ -724,7 +724,7 @@ load("Sentralitet.RData")
 load("bef.RData")
 load("demografi_total.RData")
 load("arbledighet.RData")
-
+load("syss.RData")
 ```
 
 
@@ -842,6 +842,48 @@ ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet,
   theme_minimal() +
   theme(legend.position = "right")
 ```
+
+```{r}
+# Merge sysselsettingdata med sentralitetsdata
+syss_merged <- syss %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne totalt antall sysselsatte per sentralitetsklasse per år
+syss_totalt <- syss_merged %>%
+  filter(år > 2000) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(totalt_sysselsatte = sum(Arbeidssted, na.rm = TRUE),
+            .groups = "drop")
+
+# Beregne prosentvis vekst år til år
+syss_vekst <- syss_totalt %>%
+  arrange(`Klasse 2023`, år) %>%
+  group_by(`Klasse 2023`) %>%
+  mutate(vekst_prosent = (totalt_sysselsatte - lag(totalt_sysselsatte)) / lag(totalt_sysselsatte) * 100) %>%
+  ungroup() %>%
+  filter(!is.na(vekst_prosent))  # Fjerner første år (ingen vekst å beregne)
+
+# Lage graf - alle klasser i samme plot
+ggplot(syss_vekst, aes(x = år, y = vekst_prosent, 
+                        color = factor(`Klasse 2023`),
+                        group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 3)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Sysselsettingsvekst etter sentralitetskategori",
+       subtitle = "Prosentvis endring fra forrige år, 2001-",
+       x = "År",
+       y = "Sysselsettingsvekst (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
 
 Lag kurveframstillinger av
 • Folketallsutvikling for årene etter 2000 for ulike sentralitetskategorier av kommuner
