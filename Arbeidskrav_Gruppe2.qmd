@@ -229,8 +229,8 @@ Dette påvirket resultatet svært mye for de aktuelle områdene (Hordaland, Sogn
 
 ```{r}
 Sentralitet <- Sentralitet |>
-  rename("kommunenummer" = knr2023) |>
-  select(-knr)
+  rename("kommunenummer" = knr2023)
+ ## select(-knr) Kommenterer ut denne da den ga følgefeil i grafene.
 ```
 
 ### Prosentvis arbeidsledighet.
@@ -956,6 +956,53 @@ ggplot(bolig_vektet_type, aes(x = år, y = vektet_kvpris,
        y = "Kvadratmeterpris (kr)") +
   theme_minimal() +
   theme(legend.position = "right")
+```
+
+#### Utvikling i utdanning
+
+```{r}
+# Merge utdanningsdata med sentralitetsdata
+utd_merged <- utdanning %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),  # Tar kun første forekomst av hver kommune
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Filtrer kun universitetsutdanning (både kort og lang) og etter 1970
+# Summere andeler per kommune per år (slår sammen kjønn)
+utd_total <- utd_merged %>%
+  filter(år > 1970) %>%
+  filter(grepl("universitet", nivå, ignore.case = TRUE)) %>%
+  group_by(kommunenummer, år, `Klasse 2023`) %>%
+  summarise(total_andel_uni = sum(utdanand, na.rm = TRUE),
+            .groups = "drop")
+
+# Beregne gjennomsnittlig andel per sentralitetsklasse per år
+utd_snitt <- utd_total %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_andel = mean(total_andel_uni, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf - alle klasser i samme plot
+ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel, 
+                       color = factor(`Klasse 2023`),
+                       group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = seq(1970, 2025, by = 5)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Andel innbyggere med universitetsutdanning etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1971-",
+       x = "År",
+       y = "Andel med universitetsutdanning (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
 ```
 
 Lag kurveframstillinger av
