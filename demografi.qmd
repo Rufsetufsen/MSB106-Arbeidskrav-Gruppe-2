@@ -1,0 +1,70 @@
+---
+title: "Demografiske data"
+format: html
+editor: visual
+---
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+```
+
+```{r}
+#| label: setup
+#| message: false
+#| echo: true
+#| warning: false
+
+library(tidyverse)
+library(readxl)
+library(sf)
+library(spdep)
+library(writexl)
+library(PxWebApiData)
+library(modelsummary)
+```
+
+```{r}
+# demografiske mellom 1986 og 2025
+
+demografiske_kjonn <- PxData12(
+  "https://data.ssb.no/api/v0/no/table/07459/",
+  Region = list("agg:KommSummer", knr24),
+  Tid    = as.character(1986:2025),
+  Kjonn  = c("1","2"),
+  Alder  = list("agg:TiAarigGruppering",
+                c("F00-09","F10-19","F20-29","F30-39","F40-49",
+                  "F50-59","F60-69","F70-79","F80-89","F90-99","F100G10+"))
+) |>
+  select(Region, år, Kjonn, alder, value) |>
+  mutate(
+    kjønn = recode(as.character(Kjonn),
+                   "1"="Menn","2"="Kvinner",
+                   .default=as.character(Kjonn))
+  ) |>
+  group_by(Region, år, kjønn, alder) |>
+  summarise(bef = sum(value, na.rm = TRUE), .groups = "drop") |>
+  rename(kommunenummer = Region) |>
+  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
+  mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |>
+  select(kommunenummer, år, kjønn, alder, bef)
+
+```
+
+```{r}
+# demografi etter aldersgruppe
+demografi <- demografiske_kjonn |>
+  mutate(
+    aldersgruppe = case_when(
+      alder %in% c("0-9 år", "10-19 år") ~ "0-19",
+      alder == "20-29 år"               ~ "20-29",
+      alder %in% c("30-39 år", "40-49 år") ~ "30-45",
+      alder %in% c("50-59 år", "60-69 år") ~ "45-66",
+      TRUE                               ~ "67+"
+    )
+  ) |>
+  group_by(kommunenummer, år, kjønn, aldersgruppe) |>
+  summarise(bef = sum(bef, na.rm = TRUE), .groups = "drop")
+
+
+```

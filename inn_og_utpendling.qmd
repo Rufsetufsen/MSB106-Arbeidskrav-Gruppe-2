@@ -1,0 +1,98 @@
+---
+title: "Inn- og utpendling"
+format: html
+editor: visual
+---
+
+```{r}
+load("nor_knr24_vec.rdata")
+load("newknr.rdata")
+```
+
+```{r}
+#| label: setup
+#| message: false
+#| echo: true
+#| warning: false
+
+library(tidyverse)
+library(readxl)
+library(sf)
+library(spdep)
+library(writexl)
+library(PxWebApiData)
+library(modelsummary)
+```
+
+```{r}
+#| warning: false
+pendl <- pxwebData12(
+  "11616",
+  Region = list("*"),
+  ContentsCode = c("Bosatt", "Innpendlere", "Utpendlere", "Arbeidssted"),
+  Tid = as.character(2000:2024),
+  Alder = "15-74"
+) |>
+  pivot_longer(
+    cols = c(Bosatt, Innpendlere, Utpendlere, Arbeidssted),
+    names_to = "ContentsCode",
+    values_to = "value"
+  )
+```
+
+```{r}
+# Aggregerer tallene over kjønn ved å summere menn (Kjonn = 1)
+# og kvinner (Kjonn = 2), slik at vi får tall for begge kjønn
+pendl_begge <- pendl |>
+  mutate(
+    Region = as.character(Region),
+    år  = as.integer(år)
+  ) |>
+  # Beholder kun observasjoner for menn og kvinner
+  filter(Kjonn %in% c(1, 2)) |>
+  group_by(Region, år, ContentsCode) |>
+  # Summerer over kjønn ved å gruppere på kommune, år og innhold
+  summarise(
+    antall = sum(value, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  # Gir innholdsvariabelen et mer beskrivende navn
+  rename(situasjon = ContentsCode)
+
+```
+
+```{r}
+#  Gjør datasettet bredt slik at hver situasjon
+#  (Bosatt, Arbeidssted, Innpendlere, Utpendlere) blir en egen kolonne
+
+pendl_begge <- pendl_begge |>
+  pivot_wider(
+    names_from  = situasjon,
+    values_from = antall
+  )
+```
+
+```{r}
+# Beregner indikatorene som etterspørres i oppgaven
+pendl_per1000 <- pendl_begge |>
+  mutate(
+    # Innpendling pr 1000 arbeidsplasser i kommunen
+    innpend_per1000_arbpl = ifelse(Arbeidssted > 0,
+                                   Innpendlere / Arbeidssted * 1000,
+                                   NA_real_),
+
+    # Utpendling pr 1000 arbeidstakere (bosatt i kommunen)
+    utpend_per1000_bosatt = ifelse(Bosatt > 0,
+                                   Utpendlere / Bosatt * 1000,
+                                   NA_real_),
+
+    # (valgfritt) netto pendling
+    pendlingsbalanse = Innpendlere - Utpendlere
+  ) |>
+  select(
+    Region, år,
+    Bosatt, Arbeidssted, Innpendlere, Utpendlere,
+    innpend_per1000_arbpl, utpend_per1000_bosatt,
+    pendlingsbalanse
+  )
+```
