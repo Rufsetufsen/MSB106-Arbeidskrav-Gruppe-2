@@ -334,8 +334,10 @@ befKart <- bef |>
   select(kommunenummer, bef_endrtot) |>
   left_join(Kart, join_by(kommunenummer)) 
 demoKart <- demografi_total |>
+  left_join(bef, join_by(kommunenummer, år)) |>
   filter(år == "2024" & aldersgruppe == "20-29") |>
-  select(kommunenummer, bef) |>
+  mutate(andelaldgruppe = bef/beftot*100) |>
+  select(kommunenummer, andelaldgruppe) |>
   left_join(Kart, join_by(kommunenummer))
 arbledighetKart <- arbledighet |>
   filter(år == "2024") |>
