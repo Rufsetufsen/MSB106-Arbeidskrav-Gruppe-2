@@ -171,7 +171,7 @@ hatt etter 2024.
 
 ```{r}
 #| cache: true
-utdan <- pxwebData12(
+utdanning <- pxwebData12(
   "https://data.ssb.no/api/v0/no/table/09429/",
   Region = list("*"),
   Tid = as.character(c(1970, 1986:2024)),
@@ -181,8 +181,8 @@ utdan <- pxwebData12(
   select(Region, år, nivå, Nivaa, Personer) |>
   rename(knr = Region)
 
-utdan <- left_join(newknr, utdan, join_by(knr)) |>
-  rename(kommunenummer = knr2023) |>
+utdanning <- left_join(newknr, utdanning, join_by(knr)) |>
+  rename(kommunenummer = knr24) |>
   group_by(kommunenummer, år) |>
   summarise(totutper = sum(Personer), .groups = "drop") |>
   filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
@@ -191,7 +191,7 @@ utdan <- left_join(newknr, utdan, join_by(knr)) |>
 ```
 
 ```{r}
-save(utdan, file = "utdan.rdata")
+save(utdanning, file = "utdanning.rdata")
 ```
 
 ## Ut- og innflyttinger pr 1000 innbyggere
@@ -208,7 +208,7 @@ flyttper1000 <- pxwebData12(
          alder = Alder)
 
 flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
-  rename(kommunenummer = knr2023) |>
+  rename(kommunenummer = knr24) |>
   group_by(kommunenummer, år, alder) |>
   summarise(innflytting = sum(Innflytting),
             utflytting = sum(Utflytting), 
@@ -232,7 +232,7 @@ flyttkat <- pxwebData12(
   rename(knr = Region)
 
 flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
-  rename(kommunenummer = knr2023) |>
+  rename(kommunenummer = knr24) |>
   group_by(kommunenummer, år) |>
   summarise(innflytting = sum(Innflytting),
             utflytting = sum(Utflytting), 
@@ -292,9 +292,9 @@ nav_aarny <- NAV |>
 nav_aarny <- nav_aarny |>
   mutate(knr = str_pad(kommunenummer, 4, "left", "0")) |>
   left_join(newknr, join_by(knr)) |>
-  filter(!knr2023 %in% c("K-21-22", "K-23", "K-Rest")) |>
-  select(knr2023, år, prosent_ledige_i_året, antall_ledige_i_året) |>
-  rename(kommunenummer = knr2023)
+  filter(!knr24 %in% c("K-21-22", "K-23", "K-Rest")) |>
+  select(knr24, år, prosent_ledige_i_året, antall_ledige_i_året) |>
+  rename(kommunenummer = knr24)
 ```
 
 ```{r}
@@ -305,14 +305,14 @@ arbledighet <- left_join(nav_aarny, SSb_Arbledig, join_by(kommunenummer, år))
 pendl <- pendl_per1000 |>
   rename(knr = "kommunenummer") |>
   left_join(newknr, join_by(knr)) |>
-  group_by(knr2023, år) |>
+  group_by(knr24, år) |>
   summarise(Bosatt = sum(Bosatt),
             Innpendlere = sum(Innpendlere),
             Utpendlere = sum(Utpendlere),
             Arbeidssted = sum(Arbeidssted),
             .groups = "drop") |>
-  filter(!knr2023 %in% c("K-21-22", "K-23", "K-Rest")) |>
-  rename(kommunenummer = knr2023) |>
+  filter(!knr24 %in% c("K-21-22", "K-23", "K-Rest")) |>
+  rename(kommunenummer = knr24) |>
   mutate(nettopend = Innpendlere - Utpendlere)
 ```
 
@@ -321,6 +321,54 @@ pendl <- pendl_per1000 |>
 save(arbledighet, file = "arbledighet.rdata")
 save(pendl, file = "pendl.rdata")
 ```
+
+```{r}
+#| warning: false
+
+syss <- pxwebData12(
+  "https://data.ssb.no/api/v0/no/table/11616",
+  Region = list("*"),
+  ContentsCode = c("Arbeidssted"),
+  Tid = as.character(2000:2024),
+  Alder = "15-74"
+)
+
+```
+
+```{r}
+syss <- syss |>
+  select(knr = Region, år, Arbeidssted) |>
+  left_join(newknr, join_by(knr)) |>
+  group_by(knr24, år) |>
+  summarise(Arbeidssted = sum(Arbeidssted),
+            .groups = "drop") |>
+  filter(knr24 != "9999") |>
+  rename(kommunenummer = knr24)
+```
+
+```{r}
+syssendr0024 <- syss |> 
+  filter(år %in% c(2000, 2024)) |> 
+   pivot_wider(
+     names_prefix = "syss",
+     names_from = år,
+     values_from = Arbeidssted
+   ) |> 
+  mutate(syssendr0024 = round(((syss2024-syss2000)/syss2000)*100, digits = 2)) |> 
+  mutate(syssendr0024 = case_when(
+    is.infinite(syssendr0024) ~ 0,
+    .default = syssendr0024
+  )) |> 
+  select(-c(syss2000, syss2024)) 
+```
+
+```{r}
+#| echo: false
+save(syss, file = "syss.rdata")
+save(syssendr0024, file = "syssendr0024.rdata")
+```
+
+# Kart
 
 ```{r}
 Kart <- st_read(
@@ -349,10 +397,8 @@ boligKart <- bolig |>
   select(kommunenummer, kvpris) |>
   left_join(Kart, join_by(kommunenummer))
 utdanningKart <- utdanning |>
-  filter(år == "2024" & (Nivaa == "04a" | Nivaa == "03a")) |>
+  filter(år == "2024") |>
   select(kommunenummer, utdanand) |>
-  group_by(kommunenummer) |>
-  summarise(utdanand = sum(utdanand), .groups = "drop") |>
   left_join(Kart, join_by(kommunenummer))
 flyttKart <- flytt |>
   filter(år == "2024") |>
