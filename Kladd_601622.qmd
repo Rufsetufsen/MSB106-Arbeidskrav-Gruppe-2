@@ -341,7 +341,7 @@ demoKart <- demografi_total |>
   left_join(Kart, join_by(kommunenummer))
 arbledighetKart <- arbledighet |>
   filter(år == "2024") |>
-  select(kommunenummer, prosent_ledige_i_året) |>
+  select(kommunenummer, prosent_ledige_i_året, prosent_arbledig) |>
   left_join(Kart, join_by(kommunenummer))
 syssendrKart <- left_join(syssendr0024, Kart, join_by(kommunenummer))
 boligKart <- bolig |>
