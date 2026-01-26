@@ -722,6 +722,7 @@ tip <- pendl |>
 # Laster inn rdata-filene vi skal bruke til å lage kurver.
 load("Sentralitet.RData")
 load("bef.RData")
+load("demografi_total.RData")
 ```
 
 
@@ -756,6 +757,57 @@ ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
   theme_minimal() +
   theme(strip.text = element_text(face = "bold"),
         axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Merge aldersdata med sentralitetsdata
+demo_merged <- demografi_total %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne totalt folketall per kommune per år (for å regne ut andeler)
+demo_totalt <- demo_merged %>%
+  filter(år > 2000) %>%
+  group_by(kommunenummer, år, `Klasse 2023`) %>%
+  summarise(totalt_bef = sum(bef, na.rm = TRUE),
+            .groups = "drop")
+
+# Merge tilbake og beregne andeler
+demo_andeler <- demo_merged %>%
+  filter(år > 2000) %>%
+  left_join(demo_totalt, by = c("kommunenummer", "år", "Klasse 2023")) %>%
+  mutate(andel = bef / totalt_bef * 100)
+
+# Kun aldersgruppen 20-29
+demo_snitt_20_29 <- demo_andeler %>%
+  filter(aldersgruppe == "20-29") %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_andel = mean(andel, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf
+ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  labs(title = "Andel innbyggere 20-29 år etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig andel per kommune, 2001-",
+       x = "År",
+       y = "Andel av befolkningen (%)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
 ```
 
 Lag kurveframstillinger av
