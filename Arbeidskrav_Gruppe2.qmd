@@ -723,6 +723,8 @@ tip <- pendl |>
 load("Sentralitet.RData")
 load("bef.RData")
 load("demografi_total.RData")
+load("arbledighet.RData")
+
 ```
 
 
@@ -808,6 +810,37 @@ ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
        y = "Andel av befolkningen (%)") +
   theme_minimal() +
   theme(strip.text = element_text(face = "bold"))
+```
+
+```{r}
+aled_merged <- arbledighet %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne gjennomsnittlig arbeidsledighet per sentralitetsklasse per år (etter 2008)
+aled_snitt <- aled_merged %>%
+  filter(år > 2008) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_ledighet = mean(prosent_ledige_i_året, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf - alle klasser i samme plot
+ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet, 
+                        color = factor(`Klasse 2023`),
+                        group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = seq(2009, 2025, by = 2)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Arbeidsledighet etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig prosent arbeidsledige per kommune, 2009-",
+       x = "År",
+       y = "Arbeidsledighet (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
 ```
 
 Lag kurveframstillinger av
