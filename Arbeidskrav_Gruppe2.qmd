@@ -497,8 +497,7 @@ flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
   left_join(beftot, join_by(kommunenummer, år)) |> 
   mutate(innper1000 = innflytting/beftot*1000,
          utper1000 = utflytting/beftot*1000,
-         nettoflyttper1000 = innper1000 - utper1000) |>
-  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
+         nettoflyttper1000 = innper1000 - utper1000)
 ```
 
 ```{r}
@@ -727,6 +726,8 @@ load("arbledighet.RData")
 load("syss.RData")
 load("bolig2.RData")
 load("pendl.RData")
+load("flyttper1000.RData")
+
 ```
 
 #### Gjennomsnittlig folketall per sentralitetsklasse
@@ -1006,7 +1007,54 @@ ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel,
 
 ```
 
-####Utvikling i pendling
+####Utvikling i netto innflytting
+
+```{r}
+flytt_merged <- flyttper1000 %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne netto utflytting (negativt nettoflytt = utflytting)
+# Beregne gjennomsnitt per sentralitetsklasse per år (etter 2010)
+flytt_snitt <- flytt_merged %>%
+  filter(år > 2010) %>%
+  mutate(netto_utflytt = -nettoflytt) %>%  # Gjør om til utflytting (positiv verdi = netto utflytting)
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_netto_utflytt = mean(netto_utflytt, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage fasettert graf
+ggplot(flytt_snitt, aes(x = år, y = gjsnitt_netto_utflytt)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2011, 2025, by = 3)) +
+  labs(title = "Netto utflytting etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig netto utflytting per kommune, 2011-",
+       x = "År",
+       y = "Netto utflytting (antall personer)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
+```
+
+
+####Utvikling i netto innpendling
 
 ```{r}
 pendl_merged <- pendl %>%
@@ -1049,6 +1097,7 @@ ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
   theme_minimal() +
   theme(strip.text = element_text(face = "bold"))
 ```
+
 
 
 Lag kurveframstillinger av
