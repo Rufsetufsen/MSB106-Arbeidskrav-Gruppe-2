@@ -208,7 +208,7 @@ Sentralitet <-
   newknr %>%
   left_join(sentralitet2017, by = c("knr" = "Kommunenummer 2018"), keep = FALSE) %>%
   left_join(sentralitet2020, by = "knr", keep = FALSE) %>%
-  left_join(sentralitet2023, by = c("knr2023" = "knr 2024"), keep = FALSE)%>%
+  left_join(sentralitet2023, by = c("knr24" = "knr 2024"), keep = FALSE)%>%
   # Sammenligner sentralitetsindeks i 2020 og 2023.  
   mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`)
 ```
@@ -229,7 +229,7 @@ Dette påvirket resultatet svært mye for de aktuelle områdene (Hordaland, Sogn
 
 ```{r}
 Sentralitet <- Sentralitet |>
-  rename("kommunenummer" = knr2023) |>
+  rename("kommunenummer" = knr24) |>
   select(-knr)
 ```
 
@@ -272,7 +272,7 @@ SSb_Arbledig <- PxData12(
 
 
 ```{r}
-arbledSSB24 <- arbledSSB |> 
+arbledSSB24 <- SSb_Arbledig |> 
   filter(år == "2024") |> 
   select(-c(år, arbstrk, regled_SSB))
 ```
@@ -359,11 +359,11 @@ syss <- pxwebData12(
 syss <- syss |>
   select(knr = Region, år, Arbeidssted) |>
   left_join(newknr, join_by(knr)) |>
-  group_by(knr2023, år) |>
+  group_by(knr24, år) |>
   summarise(Arbeidssted = sum(Arbeidssted),
             .groups = "drop") |>
-  filter(knr2023 != "9999") |>
-  rename(kommunenummer = knr2023)
+  filter(knr24 != "9999") |>
+  rename(kommunenummer = knr24)
 ```
 
 ```{r}
@@ -451,7 +451,7 @@ utdanning <- pxwebData12(
 
 ```{r}
 utdanning <- left_join(newknr, utdanning, join_by(knr)) |>
-  rename(kommunenummer = knr2023) |>
+  rename(kommunenummer = knr24) |>
   filter(!is.na(kommunenummer)) |>
   group_by(kommunenummer, år, nivå, Nivaa, Kjonn) |>
   summarise(
@@ -496,7 +496,7 @@ flyttper1000 <- pxwebData12(
          alder = Alder)
 
 flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
-  rename(kommunenummer = knr2023) |>
+  rename(kommunenummer = knr24) |>
   group_by(kommunenummer, år, alder) |>
   summarise(innflytting = sum(Innflytting),
             utflytting = sum(Utflytting), 
@@ -520,7 +520,7 @@ flyttkat <- pxwebData12(
   rename(knr = Region)
 
 flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
-  rename(kommunenummer = knr2023) |>
+  rename(kommunenummer = knr24) |>
   group_by(kommunenummer, år) |>
   summarise(innflytting = sum(Innflytting),
             utflytting = sum(Utflytting), 
@@ -557,7 +557,7 @@ flyttper1000 <- pxwebData12(
 
 ```{r}
 flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
-  rename(kommunenummer = knr2023) |>
+  rename(kommunenummer = knr24) |>
   group_by(kommunenummer, år, alder) |>
   summarise(innflytting = sum(Innflytting),
             utflytting = sum(Utflytting), 
@@ -582,7 +582,7 @@ flyttkat <- pxwebData12(
   rename(knr = Region)
 
 flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
-  rename(kommunenummer = knr2023) |>
+  rename(kommunenummer = knr24) |>
   group_by(kommunenummer, år) |>
   summarise(innflytting = sum(Innflytting),
             utflytting = sum(Utflytting), 
