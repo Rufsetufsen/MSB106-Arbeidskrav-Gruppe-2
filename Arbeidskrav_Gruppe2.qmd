@@ -557,8 +557,7 @@ flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
   left_join(beftot, join_by(kommunenummer, år)) |> 
   mutate(innper1000 = innflytting/beftot*1000,
          utper1000 = utflytting/beftot*1000,
-         nettoflyttper1000 = innper1000 - utper1000) |>
-  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
+         nettoflyttper1000 = innper1000 - utper1000)
 ```
 
 ```{r}
@@ -726,13 +725,17 @@ load("arbledighet.RData")
 load("syss.RData")
 load("bolig2.RData")
 load("pendl.RData")
-load("flyttper1000.RData")
-
+load("flytt.rdata")
 ```
 
 #### Gjennomsnittlig folketall per sentralitetsklasse
 
 ```{r}
+bef_merged <- bef %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer")
+
+
 # Gjennomsnittlig folketall per sentralitetsklasse - med facets (for lesbarhet)
 bef_snitt <- bef_merged %>%
   filter(år > 2000) %>%
