@@ -1,5 +1,5 @@
 ---
-title: "korrelasjon"
+title: "Oppgave 3 og 4"
 format: html
 editor: visual
 ---
@@ -434,10 +434,6 @@ cor_netto_utpend_nabo_kvpris_2013_2023
 
 # Paneldata, årlig endring i folketall og sysselsetting
 ```{r}
-# ===============================
-# 1. Årlig endring i folketall og sysselsetting
-# ===============================
-
 folk_syss_panel <- demografi_total %>%
   std_k(kommunenummer) %>%
   std_year(år) %>%
@@ -495,10 +491,6 @@ cor_folk_syss %>%
 # Paneldata, årlig endring i prosentvis arbeidsledighet og årlig prosentvise endring i sysselsetting
 
 ```{r}
-# ===============================
-# 2. Årlig endring i prosentvis arbeidsledighet
-#    og årlig prosentvise endring i sysselsetting
-# ===============================
 
 ledig_syss_panel <- ledig %>%
   left_join(
@@ -541,10 +533,6 @@ cor_ledig_syss
 
 # Paneldata, årlig endring i boligpriser og årlig netto innflytting pr 1000 innbyggere
 ```{r}
-# ===============================
-# 3. Årlig endring i boligpriser
-#    og årlig netto innflytting pr 1000 innbyggere
-# ===============================
 
 bolig_flytt_panel <- kvpris_ene %>%
   std_k(kommunenummer) %>%
@@ -593,10 +581,6 @@ cor_bolig_nettoflytt
 # Paneldata, årlig prosentvis endring i sysselsetting og årlig endring i boligpriser
 
 ```{r}
-# ===============================
-# 4. Årlig prosentvis endring i sysselsetting
-#    og årlig endring i boligpriser
-# ===============================
 
 syss_bolig_panel <- syss %>%
   std_k(kommunenummer) %>%
@@ -647,10 +631,6 @@ cor_syss_bolig
 
 
 ```{r}
-# ===============================
-# 5. Årlig endring i innpendling pr 1000 innbyggere
-#    og årlig prosentvis endring i sysselsetting
-# ===============================
 
 pendl_syss_panel <- pendl_std %>%
   std_k(kommunenummer) %>%
