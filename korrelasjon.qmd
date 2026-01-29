@@ -4,6 +4,7 @@ format: html
 editor: visual
 ---
 
+# 3.Korrelasjon
 ```{r}
 library(tidyverse)
 library(janitor)
@@ -374,11 +375,13 @@ cor_nettoflytt_netto_utpend_2013_2023
 
 ```{r}
 #| warning: false
-# library(sf)
-# library(spdep)
-# library(dplyr)
-# library(stringr)
-# library(tibble)
+library(sf)
+library(spdep)
+library(dplyr)
+library(stringr)
+library(tibble)
+library(lwgeom)
+
 
 dsn <- "WFS:https://wfs.geonorge.no/skwms1/wfs.inspire-au?service=WFS"
 
@@ -429,7 +432,7 @@ cor_netto_utpend_nabo_kvpris_2013_2023
 
 ```
 
-# Sammenhengen mellom befolkning og sysselsetting
+# 4.Sammenhengen mellom befolkning og sysselsetting
 
 ```{r}
 # Dette konstruerer et paneldatasett på formen (kommunenummer, år, befolkning, sysselsetting).
@@ -466,7 +469,6 @@ panel_bef_syss <- demografi_total %>%
 
 ```
 
-
 ```{r}
 # Pooled regresjon (uten kommune- og årsspesifikasjon)
 
@@ -475,7 +477,6 @@ panel_bef_syss <- demografi_total %>%
 
 m_pooled <- lm(sysselsetting ~ befolkning, data = panel_bef_syss)
 ```
-
 
 ```{r}
 # Regresjon med faste effekter for både kommune og år (two-way fixed effects)
@@ -489,7 +490,6 @@ m_fe <- fixest::feols(
 )
 
 ```
-
 
 ```{r}
 library(modelsummary)
@@ -508,6 +508,24 @@ modelsummary(
 )
 
 ```
+
+Sammenlign resultatene for disse to regresjonsmodellene:
+
+I den pooled regresjonen er sysselsetting den avhengige variabelen og befolkning forklaringsvariabelen. Modellen skiller ikke mellom kommuner og år, men behandler alle kommune-år-observasjoner samlet. Estimatet utnytter derfor både forskjeller mellom kommuner og endringer innen samme kommune over tid for å beskrive sammenhengen mellom befolkning og sysselsetting. Koeffisienten på 0,696 innebærer at en økning i befolkningen på en person i gjennomsnitt er assosiert med om lag 0,696 flere sysselsatte.
+
+Når faste effekter for både kommuner og år inkluderes, kontrollerer modellen for kommune-spesifikke faktorer som er konstante over tid, samt felles nasjonale sjokk i hvert år. I denne spesifikasjonen identifiseres sammenhengen mellom befolkning og sysselsetting utelukkende ved hjelp av variasjon innen samme kommune over tid. Koeffisienten på 0,601 innebærer at en økning i befolkningen på en person innen en kommune i gjennomsnitt er assosiert med om lag 0,601 flere sysselsatte.
+
+At koeffisienten i modellen med faste effekter er lavere enn i den pooled regresjonen, indikerer at en del av den positive sammenhengen i pooled modellen skyldes varige strukturelle forskjeller mellom kommuner som kontrolleres for når faste effekter inkluderes.
+
+
+Sammenlign med resultater for korrelasjonskoeﬀisienter i deloppgaven foran:
+
+
+Kan resultatene fra slike regresjonsmodeller i større grad enn korrelasjonskoeﬀisienten tolkes kausalt?
+
+Resultatene fra regresjonsmodellene kan i større grad enn en enkel korrelasjonskoeffisient tolkes kausalt. En korrelasjonskoeffisient viser kun om to variabler samvarierer. Den kontrollerer ikke for andre forhold. Regresjonsmodellene kontrollerer derimot for flere viktige faktorer. Når faste effekter for kommuner og år inkluderes, tas det hensyn til både varige forskjeller mellom kommuner og felles sjokk som rammer alle kommuner i samme år. Estimatene bygger da på endringer innen samme kommune over tid. Dette gir et bedre grunnlag for kausal tolkning. Likevel kan resultatene ikke tolkes som fullt ut kausale. Det kan fortsatt finnes omvendt kausalitet og tidsvarierende forhold som ikke er kontrollert for i modellen.
+
+
 
 
 
