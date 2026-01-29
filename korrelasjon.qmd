@@ -432,6 +432,271 @@ cor_netto_utpend_nabo_kvpris_2013_2023
 
 ```
 
+# Paneldata, årlig endring i folketall og sysselsetting
+```{r}
+# ===============================
+# 1. Årlig endring i folketall og sysselsetting
+# ===============================
+
+folk_syss_panel <- demografi_total %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  summarise(
+    folketall = sum(bef, na.rm = TRUE),
+    .by = c(kommunenummer, år)
+  ) %>%
+  left_join(
+    syss %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, syss = Arbeidssted),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    d_folketall = folketall - lag(folketall),
+    d_syss      = syss - lag(syss)
+  ) %>%
+  ungroup()
+
+cor_folk_syss <- folk_syss_panel %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = sum(complete.cases(d_folketall, d_syss)),
+    cor_folk_syss = {
+      if (n_obs >= 2) {
+        cor(d_folketall, d_syss, use = "complete.obs")
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_folk_syss
+
+
+cor_folk_syss %>%
+  summarise(
+    n_komm = n(),
+    mean = mean(cor_folk_syss, na.rm = TRUE),
+    median = median(cor_folk_syss, na.rm = TRUE),
+    sd = sd(cor_folk_syss, na.rm = TRUE),
+    min = min(cor_folk_syss, na.rm = TRUE),
+    max = max(cor_folk_syss, na.rm = TRUE),
+    n_na = sum(is.na(cor_folk_syss))
+  )
+
+
+
+```
+
+# Paneldata, årlig endring i prosentvis arbeidsledighet og årlig prosentvise endring i sysselsetting
+
+```{r}
+# ===============================
+# 2. Årlig endring i prosentvis arbeidsledighet
+#    og årlig prosentvise endring i sysselsetting
+# ===============================
+
+ledig_syss_panel <- ledig %>%
+  left_join(
+    syss %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, syss = Arbeidssted),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    d_ledig = ledig - lag(ledig),
+    g_syss_pct = 100 * (syss / lag(syss) - 1)
+  ) %>%
+  ungroup()
+
+# Korrelasjon per kommune 
+cor_ledig_syss <- ledig_syss_panel %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = sum(complete.cases(d_ledig, g_syss_pct)),
+    sd_ledig = sd(d_ledig, na.rm = TRUE),
+    sd_syss  = sd(g_syss_pct, na.rm = TRUE),
+
+    cor_ledig_syss = {
+      if (n_obs >= 2 && sd_ledig > 0 && sd_syss > 0) {
+        cor(d_ledig, g_syss_pct, use = "complete.obs")
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_ledig_syss
+
+
+```
+
+# Paneldata, årlig endring i boligpriser og årlig netto innflytting pr 1000 innbyggere
+```{r}
+# ===============================
+# 3. Årlig endring i boligpriser
+#    og årlig netto innflytting pr 1000 innbyggere
+# ===============================
+
+bolig_flytt_panel <- kvpris_ene %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  select(kommunenummer, år, kvpris) %>%
+  filter(is.finite(kvpris)) %>%
+  inner_join(
+    flytt_std %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, nettoflytt_per1000) %>%
+      filter(is.finite(nettoflytt_per1000)),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    d_kvpris     = kvpris - lag(kvpris),
+    d_nettoflytt = nettoflytt_per1000 - lag(nettoflytt_per1000)
+  ) %>%
+  ungroup()
+
+bolig_flytt_diff <- bolig_flytt_panel %>%
+  filter(is.finite(d_kvpris), is.finite(d_nettoflytt))
+
+cor_bolig_nettoflytt <- bolig_flytt_diff %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = n(),
+    sd_kvpris = sd(d_kvpris, na.rm = TRUE),
+    sd_flytt  = sd(d_nettoflytt, na.rm = TRUE),
+    cor_bolig_nettoflytt = {
+      if (n_obs >= 2 && sd_kvpris > 0 && sd_flytt > 0) {
+        cor(d_kvpris, d_nettoflytt, use = 'complete.obs')
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_bolig_nettoflytt
+
+```
+
+# Paneldata, årlig prosentvis endring i sysselsetting og årlig endring i boligpriser
+
+```{r}
+# ===============================
+# 4. Årlig prosentvis endring i sysselsetting
+#    og årlig endring i boligpriser
+# ===============================
+
+syss_bolig_panel <- syss %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  select(kommunenummer, år, syss = Arbeidssted) %>%
+  filter(is.finite(syss)) %>%
+  inner_join(
+    kvpris_ene %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, kvpris) %>%
+      filter(is.finite(kvpris)),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    g_syss_pct = 100 * (syss / lag(syss) - 1),  # prosentvis endring i sysselsetting
+    d_kvpris   = kvpris - lag(kvpris)           # årlig endring i boligpriser
+  ) %>%
+  ungroup()
+
+syss_bolig_diff <- syss_bolig_panel %>%
+  filter(is.finite(g_syss_pct), is.finite(d_kvpris))
+
+cor_syss_bolig <- syss_bolig_diff %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = n(),
+    sd_syss  = sd(g_syss_pct, na.rm = TRUE),
+    sd_kvpris = sd(d_kvpris, na.rm = TRUE),
+    cor_syss_bolig = {
+      if (n_obs >= 2 && sd_syss > 0 && sd_kvpris > 0) {
+        cor(g_syss_pct, d_kvpris, use = 'complete.obs')
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_syss_bolig
+
+```
+
+
+# Paneldata, årlige endring i innpendling pr 1000 innbyggere og årlig prosentvis endring i sysselsetting
+
+
+```{r}
+# ===============================
+# 5. Årlig endring i innpendling pr 1000 innbyggere
+#    og årlig prosentvis endring i sysselsetting
+# ===============================
+
+pendl_syss_panel <- pendl_std %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  select(kommunenummer, år, innpend_per1000) %>%
+  filter(is.finite(innpend_per1000)) %>%
+  inner_join(
+    syss %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, syss = Arbeidssted) %>%
+      filter(is.finite(syss)),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    d_innpend = innpend_per1000 - lag(innpend_per1000),  # årlig endring i innpendling
+    g_syss_pct = 100 * (syss / lag(syss) - 1)            # % endring i sysselsetting
+  ) %>%
+  ungroup()
+
+pendl_syss_diff <- pendl_syss_panel %>%
+  filter(is.finite(d_innpend), is.finite(g_syss_pct))
+
+cor_innpend_syss <- pendl_syss_diff %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = n(),
+    sd_innpend = sd(d_innpend, na.rm = TRUE),
+    sd_syss    = sd(g_syss_pct, na.rm = TRUE),
+    cor_innpend_syss = {
+      if (n_obs >= 2 && sd_innpend > 0 && sd_syss > 0) {
+        cor(d_innpend, g_syss_pct, use = 'complete.obs')
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_innpend_syss
+
+```
+
+
 # 4.Sammenhengen mellom befolkning og sysselsetting
 
 ```{r}
