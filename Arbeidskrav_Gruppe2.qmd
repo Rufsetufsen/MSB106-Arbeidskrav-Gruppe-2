@@ -693,8 +693,6 @@ sheets <- list(
 write_xlsx(sheets, "data_export.xlsx")
 ```
 
-
-
 ```{r}
 
 tip <- pendl |>
@@ -714,6 +712,50 @@ tip <- pendl |>
 ```
 
 ## Oppgave 2
+
+### Kart
+
+Den prosentvise folketallsveksten etter år 2000, til 2024, kan ses i (figur).
+Her kan man se at det er ett fåtall kommuner som har klasse 6 eller høyere.
+Der er flere kommuner i Akershus med forholdsvis høy befolkningsvekts, for eksempel Gjerdrum, Nannestad og Eidsvoll.
+Ullensaker har hatt høyest vekst i landet.
+Kystområdene sør i landet har generelt sett hatt høyere vekst enn innlandet og Nord-Norge.
+De kommunene med lavest vekst ligger for det meste i Trøndelag og lengre nord i landet.
+
+I (figur) vises andel av befolkningen i aldersgruppen 20-29 i 2024.
+Her er det høyest andel i Troms, og en del plasser i Finnmark har høy andel i aldersgruppen.
+Det er noen kommuner i landet med spesielt høy andel (18%), for eksempel en kommune i Trøndelag, Oslo, og noen steder vest i landet.
+
+(Figur) viser et kart over arbeidsledigheten i Norge i 2024.
+Kartet viser få uteliggere med høy arbeidsledighet.
+Høyest arbeidsledighet er i Finnmark, men man kan finne en uteligger i Nordland.
+Det er også mer arbeidsledighet i området rundt og i Akershus enn vest i landet.
+Videre i (figur) kan man se prosentvis sysselsettingsvekst etter år 2000, til 2024.
+Her kan man se at det har både vært negativ og positiv vekt i landet.
+Igjen kommer kystområdene i Sør-Norge, samt områdene rundt og i Oslo godt ut, og har en høy klasse vekst.
+Innlandet og nordover i landet har en del negativ vekst.
+Hamarøy skiller seg spesielt ut og har klasse 10 vekst, selv om nabo kommunene har svak eller negativ vekst.
+
+Andelen av innbyggere med universitetsutdanning i 2024 kan ses i (figur).
+Her er det blant annet en høy andel i området i og rundt Oslo.
+Det er flere kommuner med forholdsvis lav andel (under 17,8%), men de fleste kommunene har en andel over den første klassen.
+
+I (figur) kan man se netto utflytting per 1000 innbyggere.
+Her viser rødt til netto utflytting, mens blått er netto innflytting.
+De fleste kommunene er blå, og dermed har netto innflytting.
+Det er noen kommuner som har spesielt høy utflytting, for eksempel Engerdal, Vang og Snåsa.
+
+Netto pendling per 1000 arbeidsplasser vises i (figur).
+Her viser rødt til kommuner med mer utpendling enn innpendling, mens blå viser til det motsatte.
+Det er mest høyest grad av utpendling i Østlandet, spesielt i Akershus.
+Det er minst kommuner med mer innpendling enn utpendling, disse kommunene er spredt over hele landet.
+Noen av disse kommunene er derimot rett vedsiden av kommunene med mest utpendling, som tyder på at arbeiderne pendler mye til nabokommunene.
+(Figur) viser den gjennomsnittlige kvadratmeter prisen for eneboliger i 2024.
+Det er en del manglende data for priser.
+I og rundt Oslo er det spesielt høy pris per kvm.
+Det samme gjelder blant annet for noen kommuner nord i Norge.
+Man kan se at det er høyere priser ved kysten enn midt i landet.
+Den høye innpendlingen i Oslo kan være ett resultat av den høye kvadratmeterprisen for eneboliger.
 
 ### Kurver
 
@@ -931,7 +973,6 @@ ggplot(bolig_vektet, aes(x = år, y = vektet_kvpris,
   theme(legend.position = "right")
 ```
 
-
 ```{r}
 # Vektet pris per boligtype
 bolig_vektet_type <- bolig_merged %>%
@@ -1053,7 +1094,6 @@ ggplot(flytt_snitt, aes(x = år, y = gjsnitt_netto_utflytt)) +
   theme(strip.text = element_text(face = "bold"))
 ```
 
-
 ####Utvikling i netto innpendling
 
 ```{r}
@@ -1098,20 +1138,4 @@ ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
   theme(strip.text = element_text(face = "bold"))
 ```
 
-
-
-Lag kurveframstillinger av
-• Folketallsutvikling for årene etter 2000 for ulike sentralitetskategorier av kommuner
-• Utviklingen i andelen av innbyggere i aldersgruppen (20-29) for årene etter 2000, for
-ulike sentralitetskategorier av kommuner
-• Utviklingen i prosentvis arbeidsledighet etter 2008 for ulike sentralitetskategorier av
-kommuner
-• Sysselsettingsvekst for årene etter 2000 for ulike sentralitetskategorier av kommuner
-• Utviklingen i kvadratmeterpriser for boliger etter 2002, for ulike sentralitetskategorier av
-kommuner (vektes med informasjon om antall boligomsetninger, slik at store kommuner
-vektes tyngre enn små i beregning av gjennomsnittet)
-• Utviklingen i andelen av innbyggerne med universitetsutdanning, etter 1970, for ulike
-sentralitetskategorier av kommuner
-• Utviklingen i netto utflytting for ulike sentralitetskategorier av kommuner, etter 2010
-• Utviklingen i netto innpendling for ulike sentralitetskategorier av kommuner, etter 2000
-
+Lag kurveframstillinger av • Folketallsutvikling for årene etter 2000 for ulike sentralitetskategorier av kommuner • Utviklingen i andelen av innbyggere i aldersgruppen (20-29) for årene etter 2000, for ulike sentralitetskategorier av kommuner • Utviklingen i prosentvis arbeidsledighet etter 2008 for ulike sentralitetskategorier av kommuner • Sysselsettingsvekst for årene etter 2000 for ulike sentralitetskategorier av kommuner • Utviklingen i kvadratmeterpriser for boliger etter 2002, for ulike sentralitetskategorier av kommuner (vektes med informasjon om antall boligomsetninger, slik at store kommuner vektes tyngre enn små i beregning av gjennomsnittet) • Utviklingen i andelen av innbyggerne med universitetsutdanning, etter 1970, for ulike sentralitetskategorier av kommuner • Utviklingen i netto utflytting for ulike sentralitetskategorier av kommuner, etter 2010 • Utviklingen i netto innpendling for ulike sentralitetskategorier av kommuner, etter 2000
