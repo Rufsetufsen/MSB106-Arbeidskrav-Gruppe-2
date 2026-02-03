@@ -137,13 +137,13 @@ basert på kommunens sentralitetsverdi.
 Endringer fra 2017 -\> 2020 og 2024 skyldes (i følge SSB selv) i stor
 grad endringer i kommunegrensene. I perioden har det vært flere
 kommuneoppløsninger/sammenslåinger, og indeksen vil påvirkes ved hver
-slik grensejustering. I 2017 (ved første kalkulering av indeksen), ble
-det også gjort noen feil i databehandlingen som senere har blitt rettet
-opp i. Ved èn kjøring av dataeksport ble det satt en cutoff på antall
-arbeidsplasser den enkelte kunne nå innen 60 minutter i stedet for de 90
-som indeksen skulle baseres på. Dette påvirket resultatet svært mye for
-de aktuelle områdene (Hordaland, Sogn og Fjordane, Møre og Romsdal,
-Trøndelag og Nord-Norge).
+slik grensejustering [@høydahl s.22]. I 2017 (ved første kalkulering av
+indeksen), ble det også gjort noen feil i databehandlingen som senere
+har blitt rettet opp i. Ved èn kjøring av dataeksport ble det satt en
+cutoff på antall arbeidsplasser den enkelte kunne nå innen 60 minutter i
+stedet for de 90 som indeksen skulle baseres på. Dette påvirket
+resultatet svært mye for de aktuelle områdene (Hordaland, Sogn og
+Fjordane, Møre og Romsdal, Trøndelag og Nord-Norge).
 
 ### Prosentvis arbeidsledighet.
 
@@ -638,4 +638,3 @@ ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
 
 \listoffigures
 \listoftables
-
