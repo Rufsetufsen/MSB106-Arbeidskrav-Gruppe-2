@@ -1,18 +1,51 @@
 ---
 title: "Arbeidskrav i Regional økonomi"
 author: "Gruppe 2"
+institute: "HVL"
 date: last-modified
-date-format: "DD MMMM YYYY"
-format: 
-  pdf:
+date-format: "dddd D MMM, YYYY"
+abstract: ""
+number-sections: true
+number-depth: 3
+lang: NO_nb
+csl: apa7.csl
+crossref:
+  fig-prefix: figur
+  tbl-prefix: tabell
+  fig-title: Figur
+  tbl-title: Tabell
+  lof-title: "Figurliste"
+  lot-title: "Tabelliste"
+format:
+  html: default
+  typst:
+    papersize: a4
+    toc: true
+    toc-title: Innholdsfortegnelse
+    documentclass: article
     number-sections: true
-    geometry: 
-      - bottom=25mm
-      - left=25mm
-      - right=25mm
-      - top=30mm
-language: 
-    crossref-fig-title: "Figur"
+    keep-tex: true
+    fig-pos: "H"
+    output-file: "Arbeidskrav_Gruppe2"
+    citeproc: true
+  pdf:
+    documentclass: article
+    toc:  true
+    toc-title: Innholdsfortegnelse
+    number-sections: true
+    keep-tex: true
+    papersize: A4
+    fig-pos: "H"
+    output-file: "Arbeidskrav_Gruppe2"
+editor_options:
+  markdown:
+    wrap: 72
+    canonical: true
+    chunk_output_type: console
+echo: false
+eval: true
+bibliography: ArbRef.bib
+nocite: '@*'
 ---
 
 ```{r}
@@ -44,6 +77,11 @@ options(
 packs <- c(
   "knitr",
   "tidyverse",
+  "readxl",
+  "sf",
+  "spdep",
+  "writexl",
+  "modelsummary",
   "lubridate",
   "PxWebApiData",
   "flextable",
@@ -74,637 +112,529 @@ load("syssendr0024.rdata")
 
 ## Datainnhenting
 
-Bruk den kommuneinndelingen som gjelder pr 1.
-januar 2026.
-Hent inn data for følgende variable:
-
 ### Folketall.
-
-Tabell 07459 på nettsidene til Statistisk Sentralbyrå (SSB) gir for eksempel mulighet til å hente årlige befolkningsdata for kommuner tilbake til 1986.
-
-```{r}
-#| cache: true
-beftot <- PxData12(
-  "https://data.ssb.no/api/v0/no/table/07459/",
-  Region = list("agg:KommSummer", knr24),
-  Tid = as.character(1986:2025),
-  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
-  select(Region, år, value) |> 
-  group_by(Region, år) |> 
-  summarise(beftot = sum(value), .groups = "drop") |> 
-  rename(kommunenummer = Region) |> 
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
-  mutate(kommunenummer = str_sub(kommunenummer, 3, 6))
-```
-
-```{r}
-#| cache: true
-befendr <- PxData12(
-  "https://data.ssb.no/api/v0/no/table/07459/",
-  Region = list("agg:KommSummer", knr24),
-  Tid = c("2000", "2025"),
-  Alder = list("agg:TodeltGrupperingB", c("H17", "H18"))) |> 
-  group_by(Region, år) |> 
-  summarise(beftot = sum(value), .groups = "drop") |> 
-  pivot_wider(
-    names_prefix = "beftot",
-    names_from = år,
-    values_from = beftot
-  ) |> 
-  rename(kommunenummer = Region) |> 
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
-  mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |>
-  mutate(bef_endrtot = (beftot2025/beftot2000)*100) |> 
-  mutate(bef_endrtot = case_when(
-    is.infinite(bef_endrtot) ~ 100,
-    .default = bef_endrtot
-  )) |>
-  select(kommunenummer, bef_endrtot)
-```
-
-```{r}
-bef <- left_join(beftot, befendr, by = join_by("kommunenummer"))
-```
-
-```{r}
-save(bef, file = "bef.rdata")
-```
 
 ### Demografiske data.
 
-Tabell 07459 hos SSB gir også grunnlag for å finne befolkningen fordelt etter kjønn, og etter de alderskategoriene dere finner hensiktsmessig for analysen.
-Dette kan for eksempel være (0-19), (20-29), (30-45), (45-66), (67-) for å fange opp ulike faser i et livsløp.
-
-```{r}
-# demografiske mellom 1986 og 2025
-
-demografiske_kjonn <- PxData12(
-  "https://data.ssb.no/api/v0/no/table/07459/",
-  Region = list("agg:KommSummer", knr24),
-  Tid    = as.character(1986:2025),
-  Kjonn  = c("1","2"),
-  Alder  = list("agg:TiAarigGruppering",
-                c("F00-09","F10-19","F20-29","F30-39","F40-49",
-                  "F50-59","F60-69","F70-79","F80-89","F90-99","F100G10+"))
-) |>
-  select(Region, år, Kjonn, alder, value) |>
-  mutate(
-    kjønn = recode(as.character(Kjonn),
-                   "1"="Menn","2"="Kvinner",
-                   .default=as.character(Kjonn))
-  ) |>
-  group_by(Region, år, kjønn, alder) |>
-  summarise(bef = sum(value, na.rm = TRUE), .groups = "drop") |>
-  rename(kommunenummer = Region) |>
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
-  mutate(kommunenummer = str_sub(kommunenummer, 3, 6)) |>
-  select(kommunenummer, år, kjønn, alder, bef)
-
-```
-
-```{r}
-# demografi etter aldersgruppe
-demografi <- demografiske_kjonn |>
-  mutate(
-    aldersgruppe = case_when(
-      alder %in% c("0-9 år", "10-19 år") ~ "0-19",
-      alder == "20-29 år"               ~ "20-29",
-      alder %in% c("30-39 år", "40-49 år") ~ "30-45",
-      alder %in% c("50-59 år", "60-69 år") ~ "45-66",
-      TRUE                               ~ "67+"
-    )
-  ) |>
-  group_by(kommunenummer, år, kjønn, aldersgruppe) |>
-  summarise(bef = sum(bef, na.rm = TRUE), .groups = "drop")
-
-```
-
-```{r}
-demografi_total <- demografi |>
-  group_by(kommunenummer, år, aldersgruppe) |>
-  summarise(
-    bef = sum(bef, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-```
-
 ### Sentralitetsindeksen for norske kommuner.
 
-Data er lett tilgjengelige på nettsidene til SSB.
-Gjør kort greie for beregningsgrunnlaget for indeksen.
-Test videre om det har vært signifikante endringer i verdiene for indeksen for de årene dere har data (2017, 2020-2024), og diskuter kort mulige årsaker til eventuelle endringer.
-
-```{r}
-#Leser av excel-filene
-sentralitet2017 <-
-  read_xlsx("./data/sentralitet 2017.xlsx")
-sentralitet2020 <- 
-  read_xlsx("./data/sentralitet 2020 kommuner.xlsx")
-sentralitet2023 <-
-  read_xlsx("./data/sentralitet 2023-2024 kommuner.xlsx")
-# Slår sammen tabellene fra 2020/2023 slik at vi kan se utvikling. 
-Sentralitet <-
-  newknr %>%
-  left_join(sentralitet2017, by = c("knr" = "Kommunenummer 2018"), keep = FALSE) %>%
-  left_join(sentralitet2020, by = "knr", keep = FALSE) %>%
-  left_join(sentralitet2023, by = c("knr24" = "knr 2024"), keep = FALSE)%>%
-  # Sammenligner sentralitetsindeks i 2020 og 2023.  
-  mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`)
-```
-
 Sentralitetsindeksen er en kode som beskriver hver kommunes sentralitet.
-Beregningen av sentralitetsindeksen er basert på reisetid til arbeidsplasser og servicefunksjoner fra alle bebodde grunnkretser.
-Indeksen er sammensatt av to del-indekser: - Antall arbeidsplasser de som bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter.
-- Hvor mange ulike typer servicefunksjoner (varer og tjenester) de som bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter.
+Beregningen av sentralitetsindeksen er basert på reisetid til
+arbeidsplasser og servicefunksjoner fra alle bebodde grunnkretser.
+Indeksen er sammensatt av to del-indekser:
 
-Antallet vektes, slik at en arbeidsplass eller servicefunksjon som ligger nært bostedet teller mer enn en som ligger lenger bort.
-Indeksen fordeles på en kontinuerlig skala fra 0 (minst sentral) til 1000 (mest sentral), og fordeles så inn i 6 forskjellige sentralitetsklasser, basert på kommunens sentralitetsverdi.
+-   Antall arbeidsplasser de som bor i den enkelte grunnkrets kan nå med
+    bil i løpet av 90 minutter.
+-   Hvor mange ulike typer servicefunksjoner (varer og tjenester) de som
+    bor i den enkelte grunnkrets kan nå med bil i løpet av 90 minutter.
 
-Endringer fra 2017 -\> 2020 og 2024 skyldes (i følge SSB selv) i stor grad endringer i kommunegrensene.
-I perioden har det vært flere kommuneoppløsninger/sammenslåinger, og indeksen vil påvirkes ved hver slik grensejustering.
-I 2017 (ved første kalkulering av indeksen), ble det også gjort noen feil i databehandlingen som senere har blitt rettet opp i.
-Ved èn kjøring av dataeksport ble det satt en cutoff på antall arbeidsplasser den enkelte kunne nå innen 60 minutter i stedet for de 90 som indeksen skulle baseres på.
-Dette påvirket resultatet svært mye for de aktuelle områdene (Hordaland, Sogn og Fjordane, Møre og Romsdal, Trøndelag og Nord-Norge).
+Antallet vektes, slik at en arbeidsplass eller servicefunksjon som
+ligger nært bostedet teller mer enn en som ligger lenger bort. Indeksen
+fordeles på en kontinuerlig skala fra 0 (minst sentral) til 1000 (mest
+sentral), og fordeles så inn i 6 forskjellige sentralitetsklasser,
+basert på kommunens sentralitetsverdi.
 
-```{r}
-Sentralitet <- Sentralitet |>
-  rename("kommunenummer" = knr24) |>
-  select(-knr)
-```
+Endringer fra 2017 -\> 2020 og 2024 skyldes (i følge SSB selv) i stor
+grad endringer i kommunegrensene. I perioden har det vært flere
+kommuneoppløsninger/sammenslåinger, og indeksen vil påvirkes ved hver
+slik grensejustering [@høydahl s.22]. I 2017 (ved første kalkulering av
+indeksen), ble det også gjort noen feil i databehandlingen som senere
+har blitt rettet opp i. Ved èn kjøring av dataeksport ble det satt en
+cutoff på antall arbeidsplasser den enkelte kunne nå innen 60 minutter i
+stedet for de 90 som indeksen skulle baseres på. Dette påvirket
+resultatet svært mye for de aktuelle områdene (Hordaland, Sogn og
+Fjordane, Møre og Romsdal, Trøndelag og Nord-Norge).
 
 ### Prosentvis arbeidsledighet.
 
-Tabell 13563 på nettsidene til SSB gir informasjon om registrerte arbeidsledige i norske kommuner (velg Nivå 2 i kategoriseringen av Prioritert arbeidsstyrkestatus), og videre om antall i arbeidsstyrken (Nivå 1).
-Dette gir grunnlag for å beregne ledighetsprosenter for kommunene, men bare for årene 2008-2024.
-Det er ikke nødvendig å gå inn på alder og innvandringskategori i data.
-Dere finner også på nett 1 en NAV-tabell («Kommune. Beholdning måned. 1995-2024 (csv)»), som gir ledighetsprosenter for kommuner for perioden 1995-2024).
-Her kan det imidlertid bli nødvendig å gjøre justeringer både for kommuneinndeling og beregning av årsgjennomsnitt basert på månedsdata.
-Gjør kort greie for hvordan NAV og SSB bruker ulike definisjoner av arbeidsledighet.
-
-#### Arbeidsledighet fra SSB
-
-```{r}
-SSb_Arbledig <- PxData12(
-  "https://data.ssb.no/api/v0/no/table/13563/",
-  Region = list("agg:KommSummer", knr24),
-  Tid = as.character(2008:2024),
-  HovArbStyrkStatus = c("A", "A.09"),
-  Alder = "15+",
-  InnvandrKat = "A-G") |>
-  select(Region, år, HovArbStyrkStatus, value) |>
-  pivot_wider(
-    names_from  = HovArbStyrkStatus,
-    values_from = value
-  ) |>
-  rename(
-    arbeidsstyrke = A,
-    registrerte_ledige = `A.09`) |>
-  rename(kommunenummer = Region) |> 
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |> 
-    mutate(
-    kommunenummer = str_sub(kommunenummer, 3, 6),
-    prosent_arbledig = if_else(
-    is.na(arbeidsstyrke) | arbeidsstyrke == 0,
-    NA_real_,
-    round(100 * registrerte_ledige / arbeidsstyrke, 2)))
-```
-
-
-```{r}
-arbledSSB24 <- SSb_Arbledig |> 
-  filter(år == "2024") |> 
-  select(-c(år, arbstrk, regled_SSB))
-```
-
-
-#### Arbeidsledighet fra NAV
-
-```{r}
-# NA verdier har ikke blitt fjernet, hvis du lurte :)
-# Leser inn excel tabell NavTabell 1995-2024.xlsx
-NAV <- read_excel("NavTabell 1995-2024.xlsx",
-                  sheet = 1,
-                  skip = 4,
-                  col_types = "text")
-
-# Gjør om Karakterer til Nummeriske tall
-NAV <- NAV |>
-  mutate(
-    År = as.numeric(År),
-    Kommunenr = as.numeric(Kommunenr)
-  )
-
-NAV <- NAV |>
-  mutate(
-    beholdning = as.numeric(Beholdning),
-    andel = as.numeric(`Andel av arbeidsstyrken`)
-  ) |>
-  filter(Kommunenr != -1)
-
-# Lager et eget data for nav_aar, der en gjør om månedstall til ett gjennomsnittstall for hvert år i hver kommune.
-nav_aar <- NAV |>
-  group_by(Kommunenr, År) |>
-  rename(kommunenummer = Kommunenr, år = År ) |>
-  summarise(
-    prosent_ledige_i_året = mean(andel, na.rm = TRUE),
-    antall_ledige_i_året = mean(beholdning, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-# Sletter NAV grunnet til at de viktige tallene vi trenger ligger i nav_aar
- rm(NAV)
-```
-
-
-Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å starte.
-I Norge publiserer både NAV og Statistik sentralbyrå (SSB) tall for arbeidsledighet, men bruker ulike metoder når det kommer til å samle inn data.
-Kilde: https://arbeidsledighet.no/sporsmal-og-svar/
+Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som
+ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å
+starte. I Norge publiserer både NAV og Statistik sentralbyrå (SSB) tall
+for arbeidsledighet, men bruker ulike metoder når det kommer til å samle
+inn data. **Kilde: https://arbeidsledighet.no/sporsmal-og-svar/**
 
 NAVs tall omfatter personer som er registrert som helt ledigh hos NAV.
-Dette er en fulltelling av alle som faktisk har meldt seg som arbeidssøkere i NAVs systemer.
-SSB derimot, måler arbeidsledighet gjennom Arbeidskraftundersøkelsen (AKU), som er en intervjuundersøkelse basert på et representativt utvalg av hele befolkningen.
+Dette er en fulltelling av alle som faktisk har meldt seg som
+arbeidssøkere i NAVs systemer. SSB derimot, måler arbeidsledighet
+gjennom Arbeidskraftundersøkelsen (AKU), som er en intervjuundersøkelse
+basert på et representativt utvalg av hele befolkningen.
 
-Begge benytter de samme grunnleggende kriteriene for hva som regnes som arbeidsledihhet.
-Forskellen i tall skyldes først og fremst innsamlongsmetoden.
-SSB inkluderer også personer som er uten arbeid og aktivt søker jobb.
-Flere av disse kan være personer som ikke er registrert hos NAV.
-Dette fører til at SSB rapporterer et høyere ledighetstall enn NAV.
+Begge benytter de samme grunnleggende kriteriene for hva som regnes som
+arbeidsledihhet. Forskellen i tall skyldes først og fremst
+innsamlongsmetoden. SSB inkluderer også personer som er uten arbeid og
+aktivt søker jobb. Flere av disse kan være personer som ikke er
+registrert hos NAV. Dette fører til at SSB rapporterer et høyere
+ledighetstall enn NAV.
 
-NAVs tall gir derimot et bedre bilde av hvor mange som faktisk mottat og har behov for oppføring fra et statlig organ, mens SSBs tall gir et bredere og mer helhetlig bilde av arbeidsledigheten i befolkningen som helhet.
+NAVs tall gir derimot et bedre bilde av hvor mange som faktisk mottat og
+har behov for oppføring fra et statlig organ, mens SSBs tall gir et
+bredere og mer helhetlig bilde av arbeidsledigheten i befolkningen som
+helhet.
 
-Kilde: https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-arbeidsledighetstall
+**Kilde:
+https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-arbeidsledighetstall**
 
 ### Sysselsetting.
 
-Tabell 03321 på nettsidene til SSB gir grunnlag for å finne antall arbeidsplasser i norske kommuner tilbake til år 2000, beregnet i 4.
-kvartal for hvert år.
-Velg sysselsatte personer etter arbeidsstedskommune.
-Bruk den kommuneinndelingen som gjelder i 2026.
-
-```{r}
-#| warning: false
-
-syss <- pxwebData12(
-  "https://data.ssb.no/api/v0/no/table/11616",
-  Region = list("*"),
-  ContentsCode = c("Arbeidssted"),
-  Tid = as.character(2000:2024),
-  Alder = "15-74"
-)
-
-```
-
-```{r}
-syss <- syss |>
-  select(knr = Region, år, Arbeidssted) |>
-  left_join(newknr, join_by(knr)) |>
-  group_by(knr24, år) |>
-  summarise(Arbeidssted = sum(Arbeidssted),
-            .groups = "drop") |>
-  filter(knr24 != "9999") |>
-  rename(kommunenummer = knr24)
-```
-
-```{r}
-syssendr0024 <- syss |> 
-  filter(år %in% c(2000, 2024)) |> 
-   pivot_wider(
-     names_prefix = "syss",
-     names_from = år,
-     values_from = Arbeidssted
-   ) |> 
-  mutate(syssendr0024 = round(((syss2024-syss2000)/syss2000)*100, digits = 2)) |> 
-  mutate(syssendr0024 = case_when(
-    is.infinite(syssendr0024) ~ 0,
-    .default = syssendr0024
-  )) |> 
-  select(-c(syss2000, syss2024)) 
-```
-
 ### Gjennomsnittlig kvadratmeterpris for bolig.
-
-Data for boligomsetninger finnes i Tabell 06035 på nettsidene til SSB.
-Data er gitt for alle år i perioden 2002-2024, blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
-Det kan være en god ide å hente informasjon både om eneboliger og leiligheter.
-For en sammenligning på tvers av kommuner kan priser på eneboliger være mest relevant, blant annet siden det er liten omsetning av leiligheter i mange små kommuner.
-
-```{r}
-# Hent metadata for tabell 06035
-meta <- ApiData(
-  "https://data.ssb.no/api/v0/no/table/06035/",
-  returnMetaFrames = TRUE
-)
-
-# Finn alle kommuner (4-sifrede kommunenummer)
-# Dette gir kommunenivå i gjeldende inndeling
-kommune_values <- meta$Region |>
-  transmute(kommunenummer = values) |>
-  filter(str_detect(kommunenummer, "^\\d{4}$")) |>
-  pull(kommunenummer)
-
-
-# Hent boligomsetninger fra API
-#    - År: 2002–2024
-#    - Boligtype: Enebolig (01) og Leilighet (03)
-#    - Variabel: Kvadratmeterpris
-bolig <- ApiData12(
-  "https://data.ssb.no/api/v0/no/table/06035/",
-  Region = kommune_values,
-  Tid = as.character(2002:2024),
-  Boligtype = c("01", "03"),
-  ContentsCode = "KvPris"
-) |>
-  select(Region, Tid, Boligtype, value) |>
-  rename(
-    kommunenummer = Region,
-    år = Tid,
-    kvpris = value
-  ) |>
-  mutate(
-    boligtype_txt = case_when(
-      Boligtype == "01" ~ "Enebolig",
-      Boligtype == "03" ~ "Leilighet",
-      TRUE ~ Boligtype
-    )
-  )|>
-  filter(!is.na(kvpris))
-
-```
 
 ### Utdanningsnivå.
 
-Tabell 09429 på nettsidene til SSB gir en lang tidsserie for 1970-2024 for hvordan befolkningen er sammensatt etter 6 ulike utdanningsnivåer, etter kjønn, blant annet spesifisert for den kommuneinndelingen vi har hatt etter 2024.
-
-```{r}
-utdanning <- pxwebData12(
-  "https://data.ssb.no/api/v0/no/table/09429/",
-  Region = list("*"),
-  Tid = as.character(c(1970, 1980:2024)),
-  Nivaa = c("01", "02a", "11", "03a", "04a", "09a"), # 6 nivå
-  Kjonn = c("1", "2"), # 1 er Menn，og 2 er Kvinner
-  ContentsCode = "Personer"
-) |> 
-  select(Region, år, nivå, Nivaa, Kjonn, Personer) |>
-  rename(knr = Region)
-```
-
-```{r}
-utdanning <- left_join(newknr, utdanning, join_by(knr)) |>
-  rename(kommunenummer = knr24) |>
-  filter(!is.na(kommunenummer)) |>
-  group_by(kommunenummer, år, nivå, Nivaa, Kjonn) |>
-  summarise(
-    Personer = sum(Personer, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  mutate(
-    Personer = if_else(Personer == 0, NA_real_, Personer)
-  ) |>
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
-  left_join(beftot, by = c("kommunenummer", "år")) |>
-  mutate(
-    utdanand = if_else(
-      is.na(beftot) | beftot == 0 | is.na(Personer),
-      NA_real_,
-      100 * Personer / beftot
-    )
-  )|>
-  filter(
-    !is.na(Personer),
-    !is.na(beftot),
-    !is.na(utdanand)
-  )
-```
-
 ### Ut- og innflyttinger pr 1000 innbyggere.
-
-Informasjon om flyttestrømmer i perioden 2010-2024 finnes i Tabell 13255 på nettsidene til SSB.
-Data kan finnes blant annet for den kommuneinndelingen vi har hatt etter 2024.
-Ved å kombinere med data for folketall (se foran) kan en beregne flyttinger pr 1000 innbyggere, til sammenligning mellom kommunene.
-Kommunene kan videre kategoriseres etter om de har netto ut- eller innflytting, og en kan finne data for utflytting pr 1000 innbyggere for alderskategorien 18-29 år, og innflytting pr 1000 innbyggere for de som er 30 år eller eldre.
-
-```{r}
-#| cache: true
-flyttper1000 <- pxwebData12(
-  "https://data.ssb.no/api/v0/no/table/13255/",
-  Region = list("*"),
-  Tid = as.character(2010:2024),
-  Alder = c("18-29", "30+")) |>
-  select(Region, år, Alder, Innflytting, Utflytting) |> 
-  rename(knr = Region,
-         alder = Alder)
-
-flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
-  rename(kommunenummer = knr24) |>
-  group_by(kommunenummer, år, alder) |>
-  summarise(innflytting = sum(Innflytting),
-            utflytting = sum(Utflytting), 
-            .groups = "drop") |>
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
-  mutate(nettoflytt = innflytting - utflytting) |>
-  left_join(beftot, join_by(kommunenummer, år)) |> 
-  mutate(innper1000 = innflytting/beftot*1000,
-         utper1000 = utflytting/beftot*1000,
-         nettoflyttper1000 = innper1000 - utper1000) |>
-  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
-```
-
-```{r}
-flyttkat <- pxwebData12(
-  "https://data.ssb.no/api/v0/no/table/13255/",
-  Region = list("*"),
-  Tid = as.character(2010:2024),
-  Alder = c("18-29", "30+")) |>
-  select(Region, år, Innflytting, Utflytting) |> 
-  rename(knr = Region)
-
-flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
-  rename(kommunenummer = knr24) |>
-  group_by(kommunenummer, år) |>
-  summarise(innflytting = sum(Innflytting),
-            utflytting = sum(Utflytting), 
-            .groups = "drop") |>
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
-  left_join(beftot, join_by(kommunenummer, år)) |>
-  mutate(totinnper1000 = innflytting/beftot*1000,
-         totutper1000 = utflytting/beftot*1000,
-         nettototflytt = totinnper1000 - totutper1000) |>
-  select(kommunenummer, år, nettototflytt) |>
-  mutate(kategori = ifelse(nettototflytt > 0, "inn_mest", "ut_mest")) |>
-  select(-nettototflytt)
-```
-
-```{r}
-flytt <- left_join(flyttper1000, flyttkat, by = join_by(kommunenummer, år))
-```
-
-```{r}
-save(flytt, file = "flytt.rdata")
-```
-
-```{r}
-#| warning: false
-flyttper1000 <- pxwebData12(
-  "https://data.ssb.no/api/v0/no/table/13255/",
-  Region = list("*"),
-  Tid = as.character(2010:2024),
-  Alder = c("18-29", "30+")) |>
-  select(Region, år, Alder, Innflytting, Utflytting) |> 
-  rename(knr = Region,
-         alder = Alder)
-```
-
-```{r}
-flyttper1000 <- left_join(newknr, flyttper1000, join_by(knr)) |>
-  rename(kommunenummer = knr24) |>
-  group_by(kommunenummer, år, alder) |>
-  summarise(innflytting = sum(Innflytting),
-            utflytting = sum(Utflytting), 
-            .groups = "drop") |>
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
-  mutate(nettoflytt = innflytting - utflytting) |>
-  left_join(beftot, join_by(kommunenummer, år)) |> 
-  mutate(innper1000 = innflytting/beftot*1000,
-         utper1000 = utflytting/beftot*1000,
-         nettoflyttper1000 = innper1000 - utper1000) |>
-  select(kommunenummer, år, alder, innper1000, utper1000, nettoflyttper1000)
-```
-
-```{r}
-#| warning: false
-flyttkat <- pxwebData12(
-  "https://data.ssb.no/api/v0/no/table/13255/",
-  Region = list("*"),
-  Tid = as.character(2010:2024),
-  Alder = c("18-29", "30+")) |>
-  select(Region, år, Innflytting, Utflytting) |> 
-  rename(knr = Region)
-
-flyttkat <- left_join(newknr, flyttkat, join_by(knr)) |>
-  rename(kommunenummer = knr24) |>
-  group_by(kommunenummer, år) |>
-  summarise(innflytting = sum(Innflytting),
-            utflytting = sum(Utflytting), 
-            .groups = "drop") |>
-  filter(!kommunenummer %in% c("K-21-22", "K-23", "K-Rest")) |>
-  left_join(beftot, join_by(kommunenummer, år)) |>
-  mutate(totinnper1000 = innflytting/beftot*1000,
-         totutper1000 = utflytting/beftot*1000,
-         nettototflytt = totinnper1000 - totutper1000) |>
-  select(kommunenummer, år, nettototflytt) |>
-  mutate(kategori = ifelse(nettototflytt > 0, "inn_mest", "ut_mest")) |>
-  select(-nettototflytt)
-```
-
-```{r}
-flytt <- left_join(flyttper1000, flyttkat, by = join_by(kommunenummer, år))
-```
 
 ### Inn- og utpendling.
 
-Innpendlingen kan gjerne måles pr 1000 arbeidsplasser i kommunen, dvs at en kombinerer data for samlet antall innpendlere i Tabell 03321 med data for sysselsetting i kommunen (etter arbeidssted).
-I anslag for utpendling pr 1000 arbeidstakere kombineres data om antall utpendlere med data for antall arbeidstakere (fra Tabell 03321, spesifisert etter bostedskommune).
-Anslag for antall arbeidstakere (etter bostedskommune) kan beregnes ut fra Tabell 03321.
-Denne tabellen kan videre brukes til å finne samlet antall pendlere ut fra kommunene og samlet antall pendlere inn til kommunene.
+## Oppgave 2
+
+### Kart
+
+![Prosentvis folketallsvekst etter år
+2000](./data/Prosentvis_folketallsvekst_etter_år_2000.png){#fig-BefolkningVekstKart}
+
+Den prosentvise folketallsveksten etter år 2000, til 2024, kan ses i
+@fig-BefolkningVekstKart. Her kan man se at det er ett fåtall kommuner
+som har klasse 6 eller høyere. Der er flere kommuner i Akershus med
+forholdsvis høy befolkningsvekts, for eksempel Gjerdrum, Nannestad og
+Eidsvoll. Ullensaker har hatt høyest vekst i landet. Kystområdene sør i
+landet har generelt sett hatt høyere vekst enn innlandet og Nord-Norge.
+De kommunene med lavest vekst ligger for det meste i Trøndelag og lengre
+nord i landet.
+
+![Andel befolkning i alder 20-29 i
+2024](./data/Andel_befolkning_i_alder_20-29_i_2024.png){#fig-Andelbef}
+
+I @fig-Andelbef vises andel av befolkningen i aldersgruppen 20-29 i
+2024. Her er det høyest andel i Troms, og en del plasser i Finnmark har
+høy andel i aldersgruppen. Det er noen kommuner i landet med spesielt
+høy andel (18%), for eksempel en kommune i Trøndelag, Oslo, og noen
+steder vest i landet.
+
+![Andel arbeidsledighet i år
+2024](./data/Andel_arbeidsledighet_i_år_2024.png){#fig-Arbledighet}
+
+![Prosentvis sysselsettingsvekst etter år
+2000](./data/Prosentvis_sysselsettingsvekst_etter_år_2000.png){#fig-SysselVekst}
+
+@Fig-Arbledighet viser et kart over arbeidsledigheten i Norge i 2024.
+Kartet viser få uteliggere med høy arbeidsledighet. Høyest
+arbeidsledighet er i Finnmark, men man kan finne en uteligger i
+Nordland. Det er også mer arbeidsledighet i området rundt og i Akershus
+enn vest i landet. Videre i @fig-SysselVekst kan man se prosentvis
+sysselsettingsvekst etter år 2000, til 2024. Her kan man se at det har
+både vært negativ og positiv vekt i landet. Igjen kommer kystområdene i
+Sør-Norge, samt områdene rundt og i Oslo godt ut, og har en høy klasse
+vekst. Innlandet og nordover i landet har en del negativ vekst. Hamarøy
+skiller seg spesielt ut og har klasse 10 vekst, selv om nabo kommunene
+har svak eller negativ vekst.
+
+![Andelen av innbyggerne med universitetsutdanning i
+2024](./data/Andelen_av_innbyggerne_med_universitetsutdanning_i_2024.png){#fig-Unviersitetand}
+
+Andelen av innbyggere med universitetsutdanning i 2024 kan ses i
+@fig-Universitetand. Her er det blant annet en høy andel i området i og
+rundt Oslo. Det er flere kommuner med forholdsvis lav andel (under
+17,8%), men de fleste kommunene har en andel over den første klassen.
+
+![Netto utflytting per 1000
+innbyggere](./data/Netto_utflytting_per_1000_innbyggere.png){#fig-Utflytting}
+
+I @fig-Utflytting kan man se netto utflytting per 1000 innbyggere. Her
+viser rødt til netto utflytting, mens blått er netto innflytting. De
+fleste kommunene er blå, og dermed har netto innflytting. Det er noen
+kommuner som har spesielt høy utflytting, for eksempel Engerdal, Vang og
+Snåsa.
+
+![Netto innpendling per 1000
+arbeidsplasser](./data/Netto_innpendling_per_1000_arbeidsplasser.png){#fig-Pendlingarb}
+
+![Gjennomsnittlig kvm. pris for eneboliger i
+2024](./data/Gjennomsnittlig_kvm._pris_for_eneboliger_i_2024.png){#fig-KvmprisEne}
+
+Netto pendling per 1000 arbeidsplasser vises i @fig-Pendlingarb. Her
+viser rødt til kommuner med mer utpendling enn innpendling, mens blå
+viser til det motsatte. Det er mest høyest grad av utpendling i
+Østlandet, spesielt i Akershus. Det er minst kommuner med mer
+innpendling enn utpendling, disse kommunene er spredt over hele landet.
+Noen av disse kommunene er derimot rett vedsiden av kommunene med mest
+utpendling, som tyder på at arbeiderne pendler mye til nabokommunene.
+@Fig-KvmprisEne viser den gjennomsnittlige kvadratmeter prisen for
+eneboliger i 2024. Det er en del manglende data for priser. I og rundt
+Oslo er det spesielt høy pris per kvm. Det samme gjelder blant annet for
+noen kommuner nord i Norge. Man kan se at det er høyere priser ved
+kysten enn midt i landet. Den høye innpendlingen i Oslo kan være ett
+resultat av den høye kvadratmeterprisen for eneboliger.
+
+### Kurver
 
 ```{r}
-#| warning: false
-pendl <- pxwebData12(
-  "11616",
-  Region = list("*"),
-  ContentsCode = c("Bosatt", "Innpendlere", "Utpendlere", "Arbeidssted"),
-  Tid = as.character(2000:2024),
-  Alder = "15-74"
-) |>
-  pivot_longer(
-    cols = c(Bosatt, Innpendlere, Utpendlere, Arbeidssted),
-    names_to = "ContentsCode",
-    values_to = "value"
-  )
+# Laster inn rdata-filene vi skal bruke til å lage kurver.
+load("bolig2.rdata")
 ```
 
-```{r}
-# Aggregerer tallene over kjønn ved å summere menn (Kjonn = 1)
-# og kvinner (Kjonn = 2), slik at vi får tall for begge kjønn
-pendl_begge <- pendl |>
-  mutate(
-    Region = as.character(Region),
-    år  = as.integer(år)
-  ) |>
-  # Beholder kun observasjoner for menn og kvinner
-  filter(Kjonn %in% c(1, 2)) |>
-  group_by(Region, år, ContentsCode) |>
-  # Summerer over kjønn ved å gruppere på kommune, år og innhold
-  summarise(
-    antall = sum(value, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  # Gir innholdsvariabelen et mer beskrivende navn
-  rename(situasjon = ContentsCode)
+#### Gjennomsnittlig folketall per sentralitetsklasse
+
+```{r, warning=FALSE, message=FALSE}
+bef_merged <- bef %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer")
+# Gjennomsnittlig folketall per sentralitetsklasse - med facets (for lesbarhet)
+bef_snitt <- bef_merged %>%
+  filter(år > 2000) %>%
+  filter(!is.na(`Klasse 2023`)) %>%
+  mutate(år = as.numeric(as.character(år))) %>%  # Konverter år til numerisk
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_folketall = mean(beftot, na.rm = TRUE),
+            .groups = "drop")
+
+ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  labs(title = "Folketallsutvikling etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig folketall per kommune, 2001-",
+       x = "År",
+       y = "Gjennomsnittlig folketall") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Andel innbyggere 20-29 år etter sentralitetskategori
+
+```{r, warning=FALSE, message=FALSE}
+# Merge aldersdata med sentralitetsdata
+demo_merged <- demografi_total %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne totalt folketall per kommune per år (for å regne ut andeler)
+demo_totalt <- demo_merged %>%
+  filter(år > 2000) %>%
+  group_by(kommunenummer, år, `Klasse 2023`) %>%
+  summarise(totalt_bef = sum(bef, na.rm = TRUE),
+            .groups = "drop")
+
+# Merge tilbake og beregne andeler
+demo_andeler <- demo_merged %>%
+  filter(år > 2000) %>%
+  left_join(demo_totalt, by = c("kommunenummer", "år", "Klasse 2023")) %>%
+  mutate(andel = bef / totalt_bef * 100)
+
+# Kun aldersgruppen 20-29
+demo_snitt_20_29 <- demo_andeler %>%
+  filter(aldersgruppe == "20-29") %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_andel = mean(andel, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf
+ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  labs(title = "Andel innbyggere 20-29 år etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig andel per kommune, 2001-",
+       x = "År",
+       y = "Andel av befolkningen (%)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
+```
+
+#### Arbeidsledighet etter sentralitetskategori
+
+```{r, warning=FALSE, message=FALSE}
+aled_merged <- arbledighet %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne gjennomsnittlig arbeidsledighet per sentralitetsklasse per år (etter 2008)
+aled_snitt <- aled_merged %>%
+  filter(år > 2008) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_ledighet = mean(prosent_ledige_i_året, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf - alle klasser i samme plot
+ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet, 
+                        color = factor(`Klasse 2023`),
+                        group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = seq(2009, 2025, by = 2)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Arbeidsledighet etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig prosent arbeidsledige per kommune, 2009-",
+       x = "År",
+       y = "Arbeidsledighet (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+#### Sysselsettingsvekst etter sentralitetskategori
+
+```{r, warning=FALSE, message=FALSE}
+# Merge sysselsettingdata med sentralitetsdata
+syss_merged <- syss %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne totalt antall sysselsatte per sentralitetsklasse per år
+syss_totalt <- syss_merged %>%
+  filter(år > 2000) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(totalt_sysselsatte = sum(Arbeidssted, na.rm = TRUE),
+            .groups = "drop")
+
+# Beregne prosentvis vekst år til år
+syss_vekst <- syss_totalt %>%
+  arrange(`Klasse 2023`, år) %>%
+  group_by(`Klasse 2023`) %>%
+  mutate(vekst_prosent = (totalt_sysselsatte - lag(totalt_sysselsatte)) / lag(totalt_sysselsatte) * 100) %>%
+  ungroup() %>%
+  filter(!is.na(vekst_prosent))  # Fjerner første år (ingen vekst å beregne)
+
+# Lage graf - alle klasser i samme plot
+ggplot(syss_vekst, aes(x = år, y = vekst_prosent, 
+                        color = factor(`Klasse 2023`),
+                        group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 3)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Sysselsettingsvekst etter sentralitetskategori",
+       subtitle = "Prosentvis endring fra forrige år, 2001-",
+       x = "År",
+       y = "Sysselsettingsvekst (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+#### Kvadratmeterpris bolig
+
+```{r, warning=FALSE, message=FALSE}
+# Merge boligdata med sentralitetsdata
+bolig_merged <- bolig2 %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer") %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne vektet gjennomsnittlig kvadratmeterpris per sentralitetsklasse per år (etter 2002)
+# Vektes med antall omsetninger
+bolig_vektet <- bolig_merged %>%
+  filter(år > 2002) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(vektet_kvpris = sum(kvpris * antall_omsetninger, na.rm = TRUE) / 
+                            sum(antall_omsetninger, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf - alle klasser i samme plot
+ggplot(bolig_vektet, aes(x = år, y = vektet_kvpris, 
+                          color = factor(`Klasse 2023`),
+                          group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = seq(2003, 2025, by = 3)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Utviklingen i kvadratmeterpriser for boliger etter sentralitetskategori",
+       subtitle = "Vektet gjennomsnitt (alle boligtyper), 2003-",
+       x = "År",
+       y = "Kvadratmeterpris (kr)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Vektet pris per boligtype
+bolig_vektet_type <- bolig_merged %>%
+  filter(år > 2002) %>%
+  group_by(år, `Klasse 2023`, boligtype_txt) %>%
+  summarise(vektet_kvpris = sum(kvpris * antall_omsetninger, na.rm = TRUE) / 
+                            sum(antall_omsetninger, na.rm = TRUE),
+            .groups = "drop")
+
+ggplot(bolig_vektet_type, aes(x = år, y = vektet_kvpris, 
+                               color = factor(`Klasse 2023`),
+                               linetype = boligtype_txt,
+                               group = interaction(`Klasse 2023`, boligtype_txt))) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
+  scale_x_continuous(breaks = seq(2003, 2025, by = 3)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  scale_linetype_discrete(name = "Boligtype") +
+  labs(title = "Utviklingen i kvadratmeterpriser for boliger etter sentralitetskategori",
+       subtitle = "Vektet gjennomsnitt etter boligtype, 2003-",
+       x = "År",
+       y = "Kvadratmeterpris (kr)") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+#### Utvikling i utdanning
+
+```{r, warning=FALSE, message=FALSE}
+# Merge utdanningsdata med sentralitetsdata
+utd_merged <- utdanning %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),  # Tar kun første forekomst av hver kommune
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne gjennomsnittlig andel per sentralitetsklasse per år
+utd_snitt <- utd_merged %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_andel = mean(utdanand, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage graf - alle klasser i samme plot
+ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel, 
+                       color = factor(`Klasse 2023`),
+                       group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = seq(1970, 2025, by = 5)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
+  labs(title = "Andel innbyggere med universitetsutdanning etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1971-",
+       x = "År",
+       y = "Andel med universitetsutdanning (%)") +
+  theme_minimal() +
+  theme(legend.position = "right")
 
 ```
 
-```{r}
-#  Gjør datasettet bredt slik at hver situasjon
-#  (Bosatt, Arbeidssted, Innpendlere, Utpendlere) blir en egen kolonne
+#### Utvikling i netto innflytting
 
-pendl_begge <- pendl_begge |>
-  pivot_wider(
-    names_from  = situasjon,
-    values_from = antall
-  )
+```{r, warning=FALSE, message=FALSE}
+flytt_merged <- flytt %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
+
+# Beregne netto utflytting (negativt nettoflytt = utflytting)
+# Beregne gjennomsnitt per sentralitetsklasse per år (etter 2010)
+flytt_snitt <- flytt_merged %>%
+  filter(år > 2010) %>%
+  mutate(netto_utflytt = -nettoflyttper1000) %>%  # Gjør om til utflytting (positiv verdi = netto utflytting)
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_netto_utflytt = mean(netto_utflytt, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage fasettert graf
+ggplot(flytt_snitt, aes(x = år, y = gjsnitt_netto_utflytt)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2011, 2025, by = 3)) +
+  labs(title = "Netto utflytting etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig netto utflytting per kommune, 2011-",
+       x = "År",
+       y = "Netto utflytting (antall personer)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
 ```
 
-```{r}
-# Beregner indikatorene som etterspørres i oppgaven
-pendl_per1000 <- pendl_begge |>
-  mutate(
-    # Innpendling pr 1000 arbeidsplasser i kommunen
-    innpend_per1000_arbpl = ifelse(Arbeidssted > 0,
-                                   Innpendlere / Arbeidssted * 1000,
-                                   NA_real_),
+#### Utvikling i netto innpendling
 
-    # Utpendling pr 1000 arbeidstakere (bosatt i kommunen)
-    utpend_per1000_bosatt = ifelse(Bosatt > 0,
-                                   Utpendlere / Bosatt * 1000,
-                                   NA_real_),
+```{r, warning=FALSE, message=FALSE}
+pendl_merged <- pendl %>%
+  mutate(år = as.numeric(as.character(år))) %>%
+  left_join(
+    Sentralitet %>% 
+      select(kommunenummer, `Klasse 2023`) %>%
+      distinct(kommunenummer, .keep_all = TRUE),
+    by = "kommunenummer"
+  ) %>%
+  filter(!is.na(`Klasse 2023`))
 
-    # (valgfritt) netto pendling
-    pendlingsbalanse = Innpendlere - Utpendlere
-  ) |>
-  select(
-    Region, år,
-    Bosatt, Arbeidssted, Innpendlere, Utpendlere,
-    innpend_per1000_arbpl, utpend_per1000_bosatt,
-    pendlingsbalanse
-  )
+# Beregne gjennomsnittlig netto innpendling per sentralitetsklasse per år (etter 2000)
+pendl_snitt <- pendl_merged %>%
+  filter(år > 2000) %>%
+  group_by(år, `Klasse 2023`) %>%
+  summarise(gjsnitt_nettopend = mean(nettopend, na.rm = TRUE),
+            .groups = "drop")
+
+# Lage fasettert graf
+ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  facet_wrap(~ `Klasse 2023`, 
+             scales = "free_y",
+             labeller = labeller(`Klasse 2023` = c(
+               "1" = "Klasse 1 (mest sentral)",
+               "2" = "Klasse 2",
+               "3" = "Klasse 3",
+               "4" = "Klasse 4",
+               "5" = "Klasse 5",
+               "6" = "Klasse 6 (minst sentral)"
+             ))) +
+  scale_x_continuous(breaks = seq(2001, 2025, by = 5)) +
+  labs(title = "Netto innpendling etter sentralitetskategori",
+       subtitle = "Gjennomsnittlig netto innpendling per kommune, 2001-",
+       x = "År",
+       y = "Netto innpendling (antall personer)") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
 ```
 
-```{r}
-library(writexl)
-```
+# Litteraturliste
 
+::: {#refs}
+:::
 
-### Korrelasjon mellom variabler
-
-
-
-
-```{r}
-sheets <- list(
-  "bef"            = bef,
-  "demografi"     = demografi,
-  "demografi_total" = demografi_total,
-  "SSb_Arbledig"   = SSb_Arbledig,
-  "bolig"          = bolig,
-  "utdanning"     = utdanning,
-  "flytt"          = flytt,
-  "pendl_per1000" = pendl_per1000,
-  "Sentralitet"   = Sentralitet,
-  "nav_aar"  = nav_aar,
-  "syss" = syss
-)
-
-write_xlsx(sheets, "data_export.xlsx")
-```
+\listoffigures
+\listoftables
