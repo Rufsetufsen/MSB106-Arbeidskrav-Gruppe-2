@@ -110,13 +110,13 @@ load("syss.rdata")
 load("syssendr0024.rdata")
 ```
 
-## Datainnhenting
+# Datainnhenting
 
-### Folketall.
+## Folketall
 
-### Demografiske data.
+## Demografiske data
 
-### Sentralitetsindeksen for norske kommuner.
+## Sentralitetsindeksen for norske kommuner
 
 Sentralitetsindeksen er en kode som beskriver hver kommunes sentralitet.
 Beregningen av sentralitetsindeksen er basert på reisetid til
@@ -145,7 +145,7 @@ stedet for de 90 som indeksen skulle baseres på. Dette påvirket
 resultatet svært mye for de aktuelle områdene (Hordaland, Sogn og
 Fjordane, Møre og Romsdal, Trøndelag og Nord-Norge).
 
-### Prosentvis arbeidsledighet.
+## Prosentvis arbeidsledighet
 
 Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som
 ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å
@@ -174,19 +174,21 @@ helhet.
 **Kilde:
 https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-arbeidsledighetstall**
 
-### Sysselsetting.
+## Sysselsetting
 
-### Gjennomsnittlig kvadratmeterpris for bolig.
+## Gjennomsnittlig kvadratmeterpris for bolig
 
-### Utdanningsnivå.
+## Utdanningsnivå
 
-### Ut- og innflyttinger pr 1000 innbyggere.
+## Ut- og innflyttinger pr 1000 innbyggere
 
-### Inn- og utpendling.
+## Inn- og utpendling
 
-## Oppgave 2
+# Resultater
 
-### Kart
+## Kart
+
+### Folketallsvekst
 
 ![Prosentvis folketallsvekst etter år
 2000](./data/Prosentvis_folketallsvekst_etter_år_2000.png){#fig-BefolkningVekstKart}
@@ -200,6 +202,8 @@ landet har generelt sett hatt høyere vekst enn innlandet og Nord-Norge.
 De kommunene med lavest vekst ligger for det meste i Trøndelag og lengre
 nord i landet.
 
+### Andel befolkning i alder 20-29
+
 ![Andel befolkning i alder 20-29 i
 2024](./data/Andel_befolkning_i_alder_20-29_i_2024.png){#fig-Andelbef}
 
@@ -208,6 +212,8 @@ I @fig-Andelbef vises andel av befolkningen i aldersgruppen 20-29 i
 høy andel i aldersgruppen. Det er noen kommuner i landet med spesielt
 høy andel (18%), for eksempel en kommune i Trøndelag, Oslo, og noen
 steder vest i landet.
+
+### Arbeidsledighet og sysselsettingsvekst
 
 ![Andel arbeidsledighet i år
 2024](./data/Andel_arbeidsledighet_i_år_2024.png){#fig-Arbledighet}
@@ -227,6 +233,8 @@ vekst. Innlandet og nordover i landet har en del negativ vekst. Hamarøy
 skiller seg spesielt ut og har klasse 10 vekst, selv om nabo kommunene
 har svak eller negativ vekst.
 
+### Andel med universitetsutdanning
+
 ![Andelen av innbyggerne med universitetsutdanning i
 2024](./data/Andelen_av_innbyggerne_med_universitetsutdanning_i_2024.png){#fig-Universitetand}
 
@@ -234,6 +242,8 @@ Andelen av innbyggere med universitetsutdanning i 2024 kan ses i
 @fig-Universitetand. Her er det blant annet en høy andel i området i og
 rundt Oslo. Det er flere kommuner med forholdsvis lav andel (under
 17,8%), men de fleste kommunene har en andel over den første klassen.
+
+### Netto utflytting
 
 ![Netto utflytting per 1000
 innbyggere](./data/Netto_utflytting_per_1000_innbyggere.png){#fig-Utflytting}
@@ -243,6 +253,8 @@ viser rødt til netto utflytting, mens blått er netto innflytting. De
 fleste kommunene er blå, og dermed har netto innflytting. Det er noen
 kommuner som har spesielt høy utflytting, for eksempel Engerdal, Vang og
 Snåsa.
+
+### Netto innpendling og kvm. pris for eneboliger
 
 ![Netto innpendling per 1000
 arbeidsplasser](./data/Netto_innpendling_per_1000_arbeidsplasser.png){#fig-Pendlingarb}
@@ -264,14 +276,14 @@ noen kommuner nord i Norge. Man kan se at det er høyere priser ved
 kysten enn midt i landet. Den høye innpendlingen i Oslo kan være ett
 resultat av den høye kvadratmeterprisen for eneboliger.
 
-### Kurver
+## Kurver
 
 ```{r}
 # Laster inn rdata-filene vi skal bruke til å lage kurver.
 load("bolig2.rdata")
 ```
 
-#### Gjennomsnittlig folketall per sentralitetsklasse
+### Gjennomsnittlig folketall per sentralitetsklasse
 
 ```{r, warning=FALSE, message=FALSE}
 bef_merged <- bef %>%
@@ -309,7 +321,7 @@ ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-#### Andel innbyggere 20-29 år etter sentralitetskategori
+### Andel innbyggere 20-29 år etter sentralitetskategori
 
 ```{r, warning=FALSE, message=FALSE}
 # Merge aldersdata med sentralitetsdata
@@ -362,7 +374,7 @@ ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
   theme(strip.text = element_text(face = "bold"))
 ```
 
-#### Arbeidsledighet etter sentralitetskategori
+### Arbeidsledighet etter sentralitetskategori
 
 ```{r, warning=FALSE, message=FALSE}
 aled_merged <- arbledighet %>%
@@ -395,7 +407,7 @@ ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet,
   theme(legend.position = "right")
 ```
 
-#### Sysselsettingsvekst etter sentralitetskategori
+### Sysselsettingsvekst etter sentralitetskategori
 
 ```{r, warning=FALSE, message=FALSE}
 # Merge sysselsettingdata med sentralitetsdata
@@ -438,7 +450,7 @@ ggplot(syss_vekst, aes(x = år, y = vekst_prosent,
   theme(legend.position = "right")
 ```
 
-#### Kvadratmeterpris bolig
+### Kvadratmeterpris bolig
 
 ```{r, warning=FALSE, message=FALSE}
 # Merge boligdata med sentralitetsdata
@@ -503,7 +515,7 @@ ggplot(bolig_vektet_type, aes(x = år, y = vektet_kvpris,
   theme(legend.position = "right")
 ```
 
-#### Utvikling i utdanning
+### Utvikling i utdanning
 
 ```{r, warning=FALSE, message=FALSE}
 # Merge utdanningsdata med sentralitetsdata
@@ -541,7 +553,7 @@ ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel,
 
 ```
 
-#### Utvikling i netto innflytting
+### Utvikling i netto innflytting
 
 ```{r, warning=FALSE, message=FALSE}
 flytt_merged <- flytt %>%
@@ -587,7 +599,7 @@ ggplot(flytt_snitt, aes(x = år, y = gjsnitt_netto_utflytt)) +
   theme(strip.text = element_text(face = "bold"))
 ```
 
-#### Utvikling i netto innpendling
+### Utvikling i netto innpendling
 
 ```{r, warning=FALSE, message=FALSE}
 pendl_merged <- pendl %>%
@@ -630,6 +642,8 @@ ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
   theme_minimal() +
   theme(strip.text = element_text(face = "bold"))
 ```
+
+## Korrelasjoner
 
 # Litteraturliste
 
