@@ -137,8 +137,8 @@ basert på kommunens sentralitetsverdi.
 Endringer fra 2017 -\> 2020 og 2024 skyldes (i følge SSB selv) i stor
 grad endringer i kommunegrensene . I perioden har det vært flere
 kommuneoppløsninger/sammenslåinger, og indeksen vil påvirkes ved hver
-slik grensejustering [@høydahl s.22]. I 2017 (ved første kalkulering av
-indeksen), ble det også gjort noen feil i databehandlingen som senere
+slik grensejustering [@høydahl, s. 22]. I 2017 (ved første kalkulering
+av indeksen), ble det også gjort noen feil i databehandlingen som senere
 har blitt rettet opp i. Ved èn kjøring av dataeksport ble det satt en
 cutoff på antall arbeidsplasser den enkelte kunne nå innen 60 minutter i
 stedet for de 90 som indeksen skulle baseres på. Dette påvirket
@@ -228,7 +228,7 @@ skiller seg spesielt ut og har klasse 10 vekst, selv om nabo kommunene
 har svak eller negativ vekst.
 
 ![Andelen av innbyggerne med universitetsutdanning i
-2024](./data/Andelen_av_innbyggerne_med_universitetsutdanning_i_2024.png){#fig-Unviersitetand}
+2024](./data/Andelen_av_innbyggerne_med_universitetsutdanning_i_2024.png){#fig-Universitetand}
 
 Andelen av innbyggere med universitetsutdanning i 2024 kan ses i
 @fig-Universitetand. Her er det blant annet en høy andel i området i og
