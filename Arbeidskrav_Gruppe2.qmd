@@ -135,7 +135,7 @@ sentral), og fordeles så inn i 6 forskjellige sentralitetsklasser,
 basert på kommunens sentralitetsverdi.
 
 Endringer fra 2017 -\> 2020 og 2024 skyldes (i følge SSB selv) i stor
-grad endringer i kommunegrensene. I perioden har det vært flere
+grad endringer i kommunegrensene . I perioden har det vært flere
 kommuneoppløsninger/sammenslåinger, og indeksen vil påvirkes ved hver
 slik grensejustering [@høydahl s.22]. I 2017 (ved første kalkulering av
 indeksen), ble det også gjort noen feil i databehandlingen som senere
