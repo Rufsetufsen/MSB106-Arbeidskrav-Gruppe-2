@@ -685,6 +685,12 @@ pendl_per1000 <- pendl_begge |>
 library(writexl)
 ```
 
+
+### Korrelasjon mellom variabler
+
+
+
+
 ```{r}
 sheets <- list(
   "bef"            = bef,
