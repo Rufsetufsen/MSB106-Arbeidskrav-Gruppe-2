@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-##  
+## 
 
 ```{r}
 load("nor_knr24_vec.rdata")
@@ -52,7 +52,7 @@ bolig <- ApiData12(
   Boligtype = c("01", "03"),
   ContentsCode = "KvPris"
 ) |>
-  select(Region, Tid, Boligtype, value) |>
+  select(Region, Tid, Boligtype, ContentsCode, value) |>
   rename(
     kommunenummer = Region,
     år = Tid,
@@ -68,4 +68,36 @@ bolig <- ApiData12(
   filter(!is.na(kvpris))
 
 
+```
+
+```{r}
+bolig2 <- ApiData12(
+  "https://data.ssb.no/api/v0/no/table/06035/",
+  Region = kommune_values,
+  Tid = as.character(2002:2024),
+  Boligtype = c("01", "03"),
+  ContentsCode = c("KvPris", "Omsetninger")
+) |>
+  select(Region, Tid, Boligtype, ContentsCode, value) |>
+  rename(
+    kommunenummer = Region,
+    år = Tid
+  ) |>
+  pivot_wider(
+    names_from = ContentsCode,
+    values_from = value
+  ) |>
+  rename(
+    kvpris = KvPris,
+    antall_omsetninger = Omsetninger
+  ) |>
+  mutate(
+    boligtype_txt = case_when(
+      Boligtype == "01" ~ "Enebolig",
+      Boligtype == "03" ~ "Leilighet",
+      TRUE ~ Boligtype
+    )
+  ) |>
+  filter(!is.na(kvpris))
+  save(bolig2, file = "bolig2.rdata")
 ```
