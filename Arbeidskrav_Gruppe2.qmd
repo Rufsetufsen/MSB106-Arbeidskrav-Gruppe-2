@@ -776,6 +776,9 @@ load("flyttper1000.RData")
 #### Gjennomsnittlig folketall per sentralitetsklasse
 
 ```{r}
+bef_merged <- bef %>%
+  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
+            by = "kommunenummer")
 # Gjennomsnittlig folketall per sentralitetsklasse - med facets (for lesbarhet)
 bef_snitt <- bef_merged %>%
   filter(år > 2000) %>%
