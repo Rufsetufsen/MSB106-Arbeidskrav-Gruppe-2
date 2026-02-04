@@ -116,6 +116,27 @@ load("syss.rdata")
 load("syssendr0024.rdata")
 ```
 
+```{r}
+#Leser av excel-filene
+sentralitet2017 <-
+  read_xlsx("./data/sentralitet 2017.xlsx")
+sentralitet2020 <- 
+  read_xlsx("./data/sentralitet 2020 kommuner.xlsx")
+sentralitet2023 <-
+  read_xlsx("./data/sentralitet 2023-2024 kommuner.xlsx")
+# Slår sammen tabellene fra 2020/2023 slik at vi kan se utvikling. 
+Sentralitet <-
+  newknr %>%
+  left_join(sentralitet2017, by = c("knr" = "Kommunenummer 2018"), keep = FALSE) %>%
+  left_join(sentralitet2020, by = "knr", keep = FALSE) %>%
+  left_join(sentralitet2023, by = c("knr24" = "knr 2024"), keep = FALSE)%>%
+  # Sammenligner sentralitetsindeks i 2020 og 2023.  
+  mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`) %>%
+  rename(kommunenummer = knr24)
+  save(Sentralitet, file = "Sentralitet.rdata")
+  save(bef, file = "Sentralitet.rdata")
+```
+
 # Datainnhenting
 
 ## Folketall
@@ -1438,8 +1459,8 @@ df_6 <- andel_20_29 %>%
   left_join(ledig %>% rename(arbeidsledighet_pct = ledig), by = c("kommunenummer", "år")) %>%
   left_join(andel_hoyere %>% rename(hoyere_utdanning_andel = andel_hoyere), by = c("kommunenummer", "år")) %>%
   left_join(pendl_std %>% 
-              select(kommunenummer, år, pendlingsbalanse) %>%
-              rename(netto_innpendling_per1000 = pendlingsbalanse), by = c("kommunenummer", "år")) %>%
+              select(kommunenummer, år, nettopend) %>%
+              rename(netto_innpendling_per1000 = nettopend), by = c("kommunenummer", "år")) %>%
   left_join(flytt_std %>%
               select(kommunenummer, år, nettoflytt_per1000) %>%
               mutate(netto_utflytting_per1000 = -nettoflytt_per1000) %>%
