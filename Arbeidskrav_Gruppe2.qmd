@@ -343,7 +343,21 @@ ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-### Andel innbyggere 20-29 år etter sentralitetskategori
+Folketallsutviklingen ser ut til å være lignende for de tre mest
+sentrale sentralitetskategoriene. I klasse 4 ser vi en lignende, dog
+svakere utvikling med et betraktelig hopp i folketall fra 2019 til 2020.
+I klasse 5 var det befolkningsnedgang fra år 2000, før det snudde til
+positiv utvikling rundt år 2007. Denne utviklingen snudde til det
+negative igjen rundt 2016, før vi igjen ser et hopp i år 2020. De aller
+minst sentrale kommunene har konsekvent hatt befolkningsnedgang siden
+2000, foruten et hopp i 2020 og en mild oppgang de siste 2-3 årene.
+Hoppet i 2020 skyldes kommunereformen. De minste kommunene (i folketall)
+ble slått sammen for å spare på administrative utgifter, og det er
+derfor vi ser størst hopp i folketall i de tre minst sentrale
+kommunekategoriene i denne perioden. Den svake oppgangen i tiden etter
+er interessant. Kan det være normalisering av hjemmekontor og økt fokus
+på distriktsutvikling som driver denne desentraliseringen? \### Andel
+innbyggere 20-29 år etter sentralitetskategori
 
 ```{r, warning=FALSE, message=FALSE}
 # Merge aldersdata med sentralitetsdata
@@ -396,6 +410,12 @@ ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
   theme(strip.text = element_text(face = "bold"))
 ```
 
+Andel innbyggere i 20-årene ser ut til å følge en noenlunde lik
+utvikling nasjonalt, unntatt for sentralitetsklasse 1 og 2 som har hatt
+en svakere nedgang i unge innbyggere enn resten av landet. Dette kan
+stemme overens med antagelsen om at unge mennesker trekkes mot urbane
+miljø.
+
 ### Arbeidsledighet etter sentralitetskategori
 
 ```{r, warning=FALSE, message=FALSE}
@@ -428,6 +448,16 @@ ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet,
   theme_minimal() +
   theme(legend.position = "right")
 ```
+
+I figuren over ser vi en grafisk framstilling av gjennomsnittlig
+arbeidsledighet (i prosent) i hver sentralitetskategori.
+Arbeidsledigheten ser ut til å være relativt lik over hele landet, med
+mindre enn ett prosentpoeng variasjon frem til 2020. I koronaåret 2020
+ser vi en eksplosjon i ledighet for alle klassene, men med størst økning
+i sentrale strøk. Sjokket fra COVID-19 ser ut til å ha gitt seg i 2022,
+og grafen trender mot likevektsledighet igjen i 2023. Datagrunnlaget
+viser at flere kommuner har oppgitt 0% arbeidsledighet i 2024, og vi
+antar at dette er en feil i statistikken.
 
 ### Sysselsettingsvekst etter sentralitetskategori
 
@@ -471,6 +501,17 @@ ggplot(syss_vekst, aes(x = år, y = vekst_prosent,
   theme_minimal() +
   theme(legend.position = "right")
 ```
+
+Figuren over viser sysselsettingsvekts. Vi ser positiv utvikling i de
+fleste årene, unntatt negativ utvikling i 2009, 2015 og 2020. Dette kan
+ses i forbindelse med internasjonale økonomiske trender. Nedgangen i
+2009 kan forklares som en konsekvens av "the great recession" i 2008.
+Nedgangen i 2015 kan vi forbinde med oljekrisen i 2014 da tusenvis av
+nordmenn mistet jobbene sine i oljeindustrien som følge av et ras i
+oljeprisen. Kyst-Norge er sterkt knyttet opp til oljeindustrien, og
+ringvirkningene av dette oljeprisfallet kunne dermed føles sterkt også i
+andre industrier i landet. Nedgangen i 2020 må ses i forbindelse med
+koronapandemien.
 
 ### Kvadratmeterpris bolig
 
@@ -537,6 +578,11 @@ ggplot(bolig_vektet_type, aes(x = år, y = vektet_kvpris,
   theme(legend.position = "right")
 ```
 
+Kvadratmeterprisen på bolig har hatt en positiv utvikling over hele
+landet, men den har vært aller sterkest i de mest sentrale kommunene.
+Det er ellers interessant å se at kvadratmeterprisen ser ut til å
+korreleres med sentralitet.
+
 ### Utvikling i utdanning
 
 ```{r, warning=FALSE, message=FALSE}
@@ -576,7 +622,13 @@ ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel,
 
 ```
 
-### Utvikling i netto innflytting
+Utviklingen i andel høyt utdannede innbyggere har vært positiv
+nasjonalt, men også her ser det ut til å korreleres med sentralitet. De
+mest sentrale kommunene har også høyest andel høyt utdannede innbyggere.
+Dette kan skyldes at befolkningen i bynære miljø har enklest tilgang til
+universiteter og høyskoler, men det kan også være en indikasjon på at
+det i bykommunene det er best tilgang på arbeid som krever høye
+kvalifikasjoner. \### Utvikling i netto innflytting
 
 ```{r, warning=FALSE, message=FALSE}
 flytt_merged <- flytt %>%
@@ -622,6 +674,9 @@ ggplot(flytt_snitt, aes(x = år, y = gjsnitt_netto_utflytt)) +
   theme(strip.text = element_text(face = "bold"))
 ```
 
+Grafene over må tydes med at negative tall viser positiv flyttebalanse
+(altså mer innflytning enn utflytning).
+
 ### Utvikling i netto innpendling
 
 ```{r, warning=FALSE, message=FALSE}
@@ -665,6 +720,14 @@ ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
   theme_minimal() +
   theme(strip.text = element_text(face = "bold"))
 ```
+
+Grafene over viser netto innpendling etter sentralitetskategori. Vi ser
+at for alle sentralitetsklassene utenom 1 og 2 har vi negativ
+gjennomsnittsinnpendlig per kommune, altså vil det være flere arbeidere
+som pendler ut fra kommunene enn pendler inn. Ett av målene for
+sentralitetsindeksen er nemlig antall arbeidsplasser innenfor rimelig
+pendleavstand (90 minutter) vektet etter nærhet. Det er dermed logisk at
+det pendles mer inn til de mest sentrale kommunene.
 
 ## Korrelasjoner
 
