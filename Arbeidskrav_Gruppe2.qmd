@@ -171,6 +171,25 @@ har behov for oppføring fra et statlig organ, mens SSBs tall gir et
 bredere og mer helhetlig bilde av arbeidsledigheten i befolkningen som
 helhet.
 
+```{r}
+#Leser av excel-filene
+sentralitet2017 <-
+  read_xlsx("./data/sentralitet 2017.xlsx")
+sentralitet2020 <- 
+  read_xlsx("./data/sentralitet 2020 kommuner.xlsx")
+sentralitet2023 <-
+  read_xlsx("./data/sentralitet 2023-2024 kommuner.xlsx")
+# Slår sammen tabellene fra 2020/2023 slik at vi kan se utvikling. 
+Sentralitet <-
+  newknr %>%
+  left_join(sentralitet2017, by = c("knr" = "Kommunenummer 2018"), keep = FALSE) %>%
+  left_join(sentralitet2020, by = "knr", keep = FALSE) %>%
+  left_join(sentralitet2023, by = c("knr24" = "knr 2024"), keep = FALSE)%>%
+  # Sammenligner sentralitetsindeks i 2020 og 2023.  
+  mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`)
+  save(Sentralitet, file = "Sentralitet.rdata")
+```
+
 **Kilde:
 https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-arbeidsledighetstall**
 
@@ -286,13 +305,15 @@ load("bolig2.rdata")
 ### Gjennomsnittlig folketall per sentralitetsklasse
 
 ```{r, warning=FALSE, message=FALSE}
+# Merge bef med sentralitet
 bef_merged <- bef %>%
-  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
-            by = "kommunenummer")
+  left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
+            by = c("kommunenummer" = "knr"))
+
 # Gjennomsnittlig folketall per sentralitetsklasse - med facets (for lesbarhet)
 bef_snitt <- bef_merged %>%
   filter(år > 2000) %>%
-  filter(!is.na(`Klasse 2023`)) %>%
+  filter(!is.na(`Klasse 2023`)) %>%  # Manglende parentes her
   mutate(år = as.numeric(as.character(år))) %>%  # Konverter år til numerisk
   group_by(år, `Klasse 2023`) %>%
   summarise(gjsnitt_folketall = mean(beftot, na.rm = TRUE),
@@ -303,7 +324,7 @@ ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
   geom_point(size = 2, color = "steelblue") +
   facet_wrap(~ `Klasse 2023`, 
              scales = "free_y",
-             labeller = labeller(`Klasse 2023` = c(
+             labeller = labeller(`Klasse 2023` = c(  # Manglende parentes her
                "1" = "Klasse 1 (mest sentral)",
                "2" = "Klasse 2",
                "3" = "Klasse 3",
@@ -327,8 +348,8 @@ ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
 # Merge aldersdata med sentralitetsdata
 demo_merged <- demografi_total %>%
   mutate(år = as.numeric(as.character(år))) %>%
-  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
-            by = "kommunenummer") %>%
+  left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
+            by = c("kommunenummer" = "knr"))%>%
   filter(!is.na(`Klasse 2023`))
 
 # Beregne totalt folketall per kommune per år (for å regne ut andeler)
@@ -379,8 +400,8 @@ ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
 ```{r, warning=FALSE, message=FALSE}
 aled_merged <- arbledighet %>%
   mutate(år = as.numeric(as.character(år))) %>%
-  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
-            by = "kommunenummer") %>%
+  left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
+            by = c("kommunenummer" = "knr"))%>%
   filter(!is.na(`Klasse 2023`))
 
 # Beregne gjennomsnittlig arbeidsledighet per sentralitetsklasse per år (etter 2008)
@@ -413,8 +434,8 @@ ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet,
 # Merge sysselsettingdata med sentralitetsdata
 syss_merged <- syss %>%
   mutate(år = as.numeric(as.character(år))) %>%
-  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
-            by = "kommunenummer") %>%
+  left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
+            by = c("kommunenummer" = "knr"))%>%
   filter(!is.na(`Klasse 2023`))
 
 # Beregne totalt antall sysselsatte per sentralitetsklasse per år
@@ -456,8 +477,8 @@ ggplot(syss_vekst, aes(x = år, y = vekst_prosent,
 # Merge boligdata med sentralitetsdata
 bolig_merged <- bolig2 %>%
   mutate(år = as.numeric(as.character(år))) %>%
-  left_join(Sentralitet %>% select(kommunenummer, `Klasse 2023`), 
-            by = "kommunenummer") %>%
+  left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
+            by = c("kommunenummer" = "knr")) %>%
   filter(!is.na(`Klasse 2023`))
 
 # Beregne vektet gjennomsnittlig kvadratmeterpris per sentralitetsklasse per år (etter 2002)
@@ -523,9 +544,9 @@ utd_merged <- utdanning %>%
   mutate(år = as.numeric(as.character(år))) %>%
   left_join(
     Sentralitet %>% 
-      select(kommunenummer, `Klasse 2023`) %>%
-      distinct(kommunenummer, .keep_all = TRUE),  # Tar kun første forekomst av hver kommune
-    by = "kommunenummer"
+      select(knr, `Klasse 2023`) %>%
+      distinct(knr, .keep_all = TRUE),  # Tar kun første forekomst av hver kommune
+    by = c("kommunenummer" = "knr")
   ) %>%
   filter(!is.na(`Klasse 2023`))
 
@@ -560,9 +581,9 @@ flytt_merged <- flytt %>%
   mutate(år = as.numeric(as.character(år))) %>%
   left_join(
     Sentralitet %>% 
-      select(kommunenummer, `Klasse 2023`) %>%
-      distinct(kommunenummer, .keep_all = TRUE),
-    by = "kommunenummer"
+      select(knr, `Klasse 2023`) %>%
+      distinct(knr, .keep_all = TRUE),
+    by = c("kommunenummer" = "knr")
   ) %>%
   filter(!is.na(`Klasse 2023`))
 
@@ -606,9 +627,9 @@ pendl_merged <- pendl %>%
   mutate(år = as.numeric(as.character(år))) %>%
   left_join(
     Sentralitet %>% 
-      select(kommunenummer, `Klasse 2023`) %>%
-      distinct(kommunenummer, .keep_all = TRUE),
-    by = "kommunenummer"
+      select(knr, `Klasse 2023`) %>%
+      distinct(knr, .keep_all = TRUE),
+    by = c("kommunenummer" = "knr")
   ) %>%
   filter(!is.na(`Klasse 2023`))
 
