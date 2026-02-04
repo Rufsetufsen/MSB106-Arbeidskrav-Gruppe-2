@@ -186,7 +186,8 @@ Sentralitet <-
   left_join(sentralitet2020, by = "knr", keep = FALSE) %>%
   left_join(sentralitet2023, by = c("knr24" = "knr 2024"), keep = FALSE)%>%
   # Sammenligner sentralitetsindeks i 2020 og 2023.  
-  mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`)
+  mutate('Endring sentralitetsindeks 2020/2023' = `Indeks 2020` - `Indeks 2023`) %>%
+  rename(kommunenummer = knr24)
   save(Sentralitet, file = "Sentralitet.rdata")
 ```
 
@@ -563,11 +564,11 @@ ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel,
                        group = `Klasse 2023`)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
-  scale_x_continuous(breaks = seq(1970, 2025, by = 5)) +
+  scale_x_continuous(breaks = seq(1985, 2025, by = 5)) +
   scale_color_discrete(name = "Sentralitetsklasse",
                        labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
   labs(title = "Andel innbyggere med universitetsutdanning etter sentralitetskategori",
-       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1971-",
+       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1986-",
        x = "År",
        y = "Andel med universitetsutdanning (%)") +
   theme_minimal() +
@@ -666,6 +667,1181 @@ ggplot(pendl_snitt, aes(x = år, y = gjsnitt_nettopend)) +
 ```
 
 ## Korrelasjoner
+
+```{r}
+# Hjelpefunksjoner (standardisering av rensing + generell korrelasjon)
+
+# Fyller ut kommunenummer til 4-sifret streng
+std_k <- function(df, k = kommunenummer) {
+  df %>%
+    mutate({{ k }} := str_pad(as.character({{ k }}), 4, "left", "0"))}
+
+# Gjør år om til heltall (for å unngå problemer ved join)
+std_year <- function(df, year = år) {
+  df %>%
+    mutate({{ year }} := as.integer({{ year }}))}
+
+# Generelt: beregn korrelasjon gruppert på år
+cor_by_year <- function(df, x, y, year = år) {
+  df %>%
+    group_by({{ year }}) %>%
+    summarise(cor = cor({{ x }}, {{ y }}, use = "complete.obs"), .groups = "drop") %>%
+    arrange({{ year }})}
+
+```
+
+```{r}
+# Ofte brukte mellomdatasett (beregnes en gang og gjenbrukes i flere join)
+
+# Andel 20–29 år + folketall (brukes svært ofte videre)
+andel_20_29 <- demografi_total %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  summarise(
+    folketall = sum(bef, na.rm = TRUE),
+    bef_20_29 = sum(bef[aldersgruppe == "20-29"], na.rm = TRUE),
+    .by = c(kommunenummer, år)
+  ) %>%
+  mutate(andel_20_29 = bef_20_29 / folketall) %>%
+  select(kommunenummer, år, folketall, andel_20_29)
+
+# Sentralitet: lag langt format (kommunenummer, år, indeks)
+sent_long <- Sentralitet %>%
+  clean_names() %>%
+  select(kommunenummer, indeks_2020, indeks_2023) %>%
+  std_k(kommunenummer) %>%
+  summarise(
+    indeks_2020 = if (all(is.na(indeks_2020))) NA_real_ else max(indeks_2020, na.rm = TRUE),
+    indeks_2023 = if (all(is.na(indeks_2023))) NA_real_ else max(indeks_2023, na.rm = TRUE),
+    .by = kommunenummer
+  ) %>%
+  pivot_longer(
+    cols = starts_with("indeks_"),
+    names_to = "år",
+    values_to = "indeks"
+  ) %>%
+  mutate(år = readr::parse_number(år)) %>%
+  select(kommunenummer, år, indeks)
+
+# Arbeidsledighet: standardiser variabelnavn til ledig
+ledig <- arbledighet %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  transmute(kommunenummer, år, ledig = prosent_arbledig) %>%
+  filter(!is.na(ledig))
+
+
+# Enebolig kvadratmeterpris
+kvpris_ene <- bolig %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  filter(boligtype_txt == "Enebolig") %>%
+  summarise(
+    kvpris = mean(kvpris, na.rm = TRUE),
+    .by = c(kommunenummer, år)
+  )
+
+# Høyere utdanning (kort + lang slått sammen til "andel_hoyere")
+andel_hoyere <- utdanning %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  summarise(
+    andel_hoyere = sum(utdanand, na.rm = TRUE),
+    .by = c(kommunenummer, år)
+  )
+
+# Flytting: utflytting/innflytting/netto (per 1000 – mean-aggregert er som regel mest robust)
+flytt_std <- flytt %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  summarise(
+    utflytt_per1000     = mean(utper1000, na.rm = TRUE),
+    innflytt_per1000    = mean(innper1000, na.rm = TRUE),
+    nettoflytt_per1000  = mean(nettoflyttper1000, na.rm = TRUE),
+    .by = c(kommunenummer, år)
+  )
+
+# Pendling per 1000: innpendling/utpendling + pendlingsbalanse (netto)
+pendl_std <- pendl %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  summarise(
+    Innpendlere     = mean(Innpendlere, na.rm = TRUE),
+    Utpendlere      = mean(Utpendlere, na.rm = TRUE),
+    nettopend    = mean(nettopend, na.rm = TRUE),
+    .by = c(kommunenummer, år)
+  )
+```
+
+# folketall vs andel_20_29（2013, 2023）
+
+```{r}
+cor_folk_2013_2023 <- andel_20_29 %>%
+  filter(år %in% c(2013, 2023)) %>%
+  cor_by_year(folketall, andel_20_29)
+cor_folk_2013_2023
+```
+
+# sentralitet vs andel_20_29（2020, 2023）
+
+```{r}
+cor_sent_2020_2023 <- andel_20_29 %>%
+  filter(år %in% c(2020, 2023)) %>%
+  left_join(sent_long, by = c("kommunenummer", "år")) %>%
+  cor_by_year(indeks, andel_20_29)
+cor_sent_2020_2023
+```
+
+# sentralitet vs arbeidsledighet（2020, 2023）
+
+```{r}
+cor_ledig_2020_2023 <- ledig %>%
+  filter(år %in% c(2020, 2023)) %>%
+  left_join(sent_long, by = c("kommunenummer", "år")) %>%
+  cor_by_year(indeks, ledig)
+cor_ledig_2020_2023
+```
+
+# sentralitet vs bolig kvpris（Enebolig, 2020, 2023）
+
+```{r}
+cor_bolig_2020_2023 <- kvpris_ene %>%
+  filter(år %in% c(2020, 2023)) %>%
+  left_join(sent_long, by = c("kommunenummer", "år")) %>%
+  cor_by_year(indeks, kvpris)
+cor_bolig_2020_2023
+```
+
+# sentralitet vs andel høyere utdanning（2020, 2023）
+
+```{r}
+cor_utd_2020_2023 <- andel_hoyere %>%
+  filter(år %in% c(2020, 2023)) %>%
+  left_join(sent_long, by = c("kommunenummer", "år")) %>%
+  cor_by_year(indeks, andel_hoyere)
+cor_utd_2020_2023
+```
+
+# sentralitet vs utflytting per1000（2020, 2023）
+
+```{r}
+cor_utflytt_2020_2023 <- flytt_std %>%
+  filter(år %in% c(2020, 2023)) %>%
+  left_join(sent_long, by = c("kommunenummer", "år")) %>%
+  cor_by_year(indeks, utflytt_per1000)
+cor_utflytt_2020_2023
+```
+
+# sentralitet vs innpend per1000（2020, 2023）
+
+```{r}
+cor_innpend_2020_2023 <- pendl_std %>%
+  filter(år %in% c(2020, 2023), !is.na(Innpendlere)) %>%
+  left_join(sent_long, by = c("kommunenummer", "år")) %>%
+  cor_by_year(indeks, Innpendlere)
+cor_innpend_2020_2023
+```
+
+# sentralitet vs utpend per1000（2020, 2023）
+
+```{r}
+cor_utpend_2020_2023 <- pendl_std %>%
+  filter(år %in% c(2020, 2023), !is.na(Utpendlere)) %>%
+  left_join(sent_long, by = c("kommunenummer", "år")) %>%
+  cor_by_year(indeks, Utpendlere)
+cor_utpend_2020_2023
+```
+
+# ledig vs andel_20_29（2013, 2023）
+
+```{r}
+cor_ledig_andel20_29_2013_2023 <- andel_20_29 %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(ledig, by = c("kommunenummer", "år")) %>%
+  cor_by_year(ledig, andel_20_29)
+cor_ledig_andel20_29_2013_2023
+```
+
+# ledig vs bolig kvpris（Enebolig, 2013, 2023）
+
+```{r}
+cor_ledig_bolig_2013_2023 <- kvpris_ene %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(ledig, by = c("kommunenummer", "år")) %>%
+  cor_by_year(ledig, kvpris)
+cor_ledig_bolig_2013_2023
+```
+
+# ledig vs andel_hoyere（2013, 2023）
+
+```{r}
+cor_ledig_utd_2013_2023 <- andel_hoyere %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(ledig, by = c("kommunenummer", "år")) %>%
+  cor_by_year(ledig, andel_hoyere)
+cor_ledig_utd_2013_2023
+```
+
+# ledig vs flytt（brutto=utflytt, netto=nettoflytt）（2013, 2023）
+
+```{r}
+cor_ledig_flytt_2013_2023 <- flytt_std %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(ledig, by = c("kommunenummer", "år")) %>%
+  mutate(
+    utflytt_per1000     = if_else(is.finite(utflytt_per1000), utflytt_per1000, NA_real_),
+    nettoflytt_per1000  = if_else(is.finite(nettoflytt_per1000), nettoflytt_per1000, NA_real_),
+    ledig               = if_else(is.finite(ledig), ledig, NA_real_)
+  ) %>%
+  group_by(år) %>%
+  summarise(
+    cor_brutto = cor(ledig, utflytt_per1000, use = "complete.obs"),
+    cor_netto  = cor(ledig, nettoflytt_per1000, use = "complete.obs"),
+    .groups = "drop"
+  ) %>%
+  arrange(år)
+
+cor_ledig_flytt_2013_2023
+
+```
+
+# ledig vs pendl（brutto=utpend, netto=nettopend）（2013, 2023）
+
+```{r}
+cor_ledig_utpend_2013_2023 <- pendl_std %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(ledig, by = c("kommunenummer", "år")) %>%
+  group_by(år) %>%
+  summarise(
+    cor_brutto = cor(ledig, Utpendlere, use = "complete.obs"),
+    cor_netto  = cor(ledig, nettopend, use = "complete.obs"),
+    .groups = "drop"
+  ) %>%
+  arrange(år)
+cor_ledig_utpend_2013_2023
+```
+
+# bolig kvpris vs andel_hoyere（2013, 2023）
+
+```{r}
+cor_bolig_utd_2013_2023 <- kvpris_ene %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(andel_hoyere, by = c("kommunenummer", "år")) %>%
+  cor_by_year(kvpris, andel_hoyere)
+cor_bolig_utd_2013_2023
+```
+
+# bolig kvpris vs andel_20_29（2013, 2023）
+
+```{r}
+cor_bolig_andel20_29_2013_2023 <- kvpris_ene %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(andel_20_29, by = c("kommunenummer", "år")) %>%
+  cor_by_year(kvpris, andel_20_29)
+cor_bolig_andel20_29_2013_2023
+```
+
+# bolig kvpris vs innpend per1000（2013, 2023）
+
+```{r}
+cor_bolig_innpend_2013_2023 <- kvpris_ene %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(pendl_std %>% select(kommunenummer, år, Innpendlere),
+            by = c("kommunenummer", "år")) %>%
+  cor_by_year(kvpris, Innpendlere)
+cor_bolig_innpend_2013_2023
+```
+
+# bolig kvpris vs utpend per1000（2013, 2023）
+
+```{r}
+cor_bolig_utpend_2013_2023 <- kvpris_ene %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(pendl_std %>% select(kommunenummer, år, Utpendlere),
+            by = c("kommunenummer", "år")) %>%
+  cor_by_year(kvpris, Utpendlere)
+cor_bolig_utpend_2013_2023
+```
+
+# bolig kvpris vs utflytt per1000（2013, 2023）
+
+```{r}
+cor_bolig_utflytt_2013_2023 <- kvpris_ene %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(flytt_std %>% select(kommunenummer, år, utflytt_per1000),
+            by = c("kommunenummer", "år")) %>%
+  cor_by_year(kvpris, utflytt_per1000)
+cor_bolig_utflytt_2013_2023
+```
+
+# bolig kvpris vs innflytt per1000（2013, 2023）
+
+```{r}
+cor_bolig_innflytt_2013_2023 <- kvpris_ene %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(flytt_std %>% select(kommunenummer, år, innflytt_per1000),
+            by = c("kommunenummer", "år")) %>%
+  cor_by_year(kvpris, innflytt_per1000)
+cor_bolig_innflytt_2013_2023
+```
+
+# nettoflytt per1000 vs andel_20_29（2013, 2023）
+
+```{r}
+cor_nettoflytt_andel20_29_2013_2023 <- flytt_std %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(andel_20_29, by = c("kommunenummer", "år")) %>%
+  cor_by_year(nettoflytt_per1000, andel_20_29)
+cor_nettoflytt_andel20_29_2013_2023
+```
+
+# nettoflytt per1000 vs netto utpend（= nettopend）（2013, 2023）
+
+```{r}
+cor_nettoflytt_netto_utpend_2013_2023 <- flytt_std %>%
+  filter(år %in% c(2013, 2023)) %>%
+  left_join(pendl_std %>% select(kommunenummer, år, nettopend),
+            by = c("kommunenummer", "år")) %>%
+  cor_by_year(nettoflytt_per1000, nettopend)
+cor_nettoflytt_netto_utpend_2013_2023
+
+```
+
+# netto utpendling og bolig kvpris i tilgrensende kommuner
+
+```{r}
+dsn <- "WFS:https://wfs.geonorge.no/skwms1/wfs.inspire-au?service=WFS"
+
+# Kommunegrenser + naboskap
+sf::sf_use_s2(FALSE)
+
+kommune_sf <- st_read(dsn, layer = "au:AdministrativeUnit", quiet = TRUE) %>%
+  rename(kommunenummer = nationalCode) %>%
+  mutate(kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0")) %>%
+  st_make_valid()
+
+nb <- spdep::poly2nb(kommune_sf, queen = TRUE)
+
+# Lag edge-list i (kommune) -> j (nabo), og map til kommunenummer
+knr <- kommune_sf$kommunenummer
+edges_knr <- dplyr::bind_rows(lapply(seq_along(nb), function(i) {
+  j <- nb[[i]]
+  if (length(j) == 0) return(NULL)
+  tibble::tibble(kommunenummer = knr[i], nabo_knr = knr[j])
+})) %>%
+  dplyr::distinct()
+
+# Enebolig kvpris per kommune-år (unik) + nabo-gjennomsnitt
+kvpris_ene <- bolig %>%
+  mutate(
+    kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+    år = as.integer(år)
+  ) %>%
+  filter(boligtype_txt == "Enebolig") %>%
+  summarise(kvpris = mean(kvpris, na.rm = TRUE), .by = c(kommunenummer, år)) %>%
+  mutate(kvpris = dplyr::if_else(is.finite(kvpris), kvpris, NA_real_))
+
+kvpris_nabo_mean <- edges_knr %>%
+  left_join(kvpris_ene, by = c("nabo_knr" = "kommunenummer")) %>%
+  summarise(kvpris_nabo_mean = mean(kvpris, na.rm = TRUE), .by = c(kommunenummer, år))
+
+# Koble til netto utpendling og beregn korrelasjon
+cor_netto_utpend_nabo_kvpris_2013_2023 <- pendl_std %>%
+  select(kommunenummer, år, nettopend) %>%
+  left_join(kvpris_nabo_mean, by = c("kommunenummer", "år")) %>%
+  filter(år %in% c(2013, 2023)) %>%
+  summarise(
+    cor = cor(nettopend, kvpris_nabo_mean, use = "complete.obs"),
+    .by = år
+  ) %>%
+  arrange(år)
+cor_netto_utpend_nabo_kvpris_2013_2023
+
+```
+
+# Paneldata, årlig endring i folketall og sysselsetting
+
+```{r}
+folk_syss_panel <- demografi_total %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  summarise(
+    folketall = sum(bef, na.rm = TRUE),
+    .by = c(kommunenummer, år)
+  ) %>%
+  left_join(
+    syss %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, syss = Arbeidssted),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    d_folketall = folketall - lag(folketall),
+    d_syss      = syss - lag(syss)
+  ) %>%
+  ungroup()
+
+cor_folk_syss <- folk_syss_panel %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = sum(complete.cases(d_folketall, d_syss)),
+    cor_folk_syss = {
+      if (n_obs >= 2) {
+        cor(d_folketall, d_syss, use = "complete.obs")
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_folk_syss
+
+
+cor_folk_syss %>%
+  summarise(
+    n_komm = n(),
+    mean = mean(cor_folk_syss, na.rm = TRUE),
+    median = median(cor_folk_syss, na.rm = TRUE),
+    sd = sd(cor_folk_syss, na.rm = TRUE),
+    min = min(cor_folk_syss, na.rm = TRUE),
+    max = max(cor_folk_syss, na.rm = TRUE),
+    n_na = sum(is.na(cor_folk_syss))
+  )
+
+
+
+```
+
+# Paneldata, årlig endring i prosentvis arbeidsledighet og årlig prosentvise endring i sysselsetting
+
+```{r}
+
+ledig_syss_panel <- ledig %>%
+  left_join(
+    syss %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, syss = Arbeidssted),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    d_ledig = ledig - lag(ledig),
+    g_syss_pct = 100 * (syss / lag(syss) - 1)
+  ) %>%
+  ungroup()
+
+# Korrelasjon per kommune 
+cor_ledig_syss <- ledig_syss_panel %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = sum(complete.cases(d_ledig, g_syss_pct)),
+    sd_ledig = sd(d_ledig, na.rm = TRUE),
+    sd_syss  = sd(g_syss_pct, na.rm = TRUE),
+
+    cor_ledig_syss = {
+      if (n_obs >= 2 && sd_ledig > 0 && sd_syss > 0) {
+        cor(d_ledig, g_syss_pct, use = "complete.obs")
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_ledig_syss
+
+
+```
+
+# Paneldata, årlig endring i boligpriser og årlig netto innflytting pr 1000 innbyggere
+
+```{r}
+
+bolig_flytt_panel <- kvpris_ene %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  select(kommunenummer, år, kvpris) %>%
+  filter(is.finite(kvpris)) %>%
+  inner_join(
+    flytt_std %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, nettoflytt_per1000) %>%
+      filter(is.finite(nettoflytt_per1000)),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    d_kvpris     = kvpris - lag(kvpris),
+    d_nettoflytt = nettoflytt_per1000 - lag(nettoflytt_per1000)
+  ) %>%
+  ungroup()
+
+bolig_flytt_diff <- bolig_flytt_panel %>%
+  filter(is.finite(d_kvpris), is.finite(d_nettoflytt))
+
+cor_bolig_nettoflytt <- bolig_flytt_diff %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = n(),
+    sd_kvpris = sd(d_kvpris, na.rm = TRUE),
+    sd_flytt  = sd(d_nettoflytt, na.rm = TRUE),
+    cor_bolig_nettoflytt = {
+      if (n_obs >= 2 && sd_kvpris > 0 && sd_flytt > 0) {
+        cor(d_kvpris, d_nettoflytt, use = 'complete.obs')
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_bolig_nettoflytt
+
+```
+
+# Paneldata, årlig prosentvis endring i sysselsetting og årlig endring i boligpriser
+
+```{r}
+
+syss_bolig_panel <- syss %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  select(kommunenummer, år, syss = Arbeidssted) %>%
+  filter(is.finite(syss)) %>%
+  inner_join(
+    kvpris_ene %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, kvpris) %>%
+      filter(is.finite(kvpris)),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    g_syss_pct = 100 * (syss / lag(syss) - 1),  # prosentvis endring i sysselsetting
+    d_kvpris   = kvpris - lag(kvpris)           # årlig endring i boligpriser
+  ) %>%
+  ungroup()
+
+syss_bolig_diff <- syss_bolig_panel %>%
+  filter(is.finite(g_syss_pct), is.finite(d_kvpris))
+
+cor_syss_bolig <- syss_bolig_diff %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = n(),
+    sd_syss  = sd(g_syss_pct, na.rm = TRUE),
+    sd_kvpris = sd(d_kvpris, na.rm = TRUE),
+    cor_syss_bolig = {
+      if (n_obs >= 2 && sd_syss > 0 && sd_kvpris > 0) {
+        cor(g_syss_pct, d_kvpris, use = 'complete.obs')
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_syss_bolig
+
+```
+
+# Paneldata, årlige endring i innpendling pr 1000 innbyggere og årlig prosentvis endring i sysselsetting
+
+```{r}
+
+pendl_syss_panel <- pendl_std %>%
+  std_k(kommunenummer) %>%
+  std_year(år) %>%
+  select(kommunenummer, år, Innpendlere) %>%
+  filter(is.finite(Innpendlere)) %>%
+  inner_join(
+    syss %>%
+      std_k(kommunenummer) %>%
+      std_year(år) %>%
+      select(kommunenummer, år, syss = Arbeidssted) %>%
+      filter(is.finite(syss)),
+    by = c("kommunenummer", "år")
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    d_innpend = Innpendlere - lag(Innpendlere),  # årlig endring i innpendling
+    g_syss_pct = 100 * (syss / lag(syss) - 1)            # % endring i sysselsetting
+  ) %>%
+  ungroup()
+
+pendl_syss_diff <- pendl_syss_panel %>%
+  filter(is.finite(d_innpend), is.finite(g_syss_pct))
+
+cor_innpend_syss <- pendl_syss_diff %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    n_obs = n(),
+    sd_innpend = sd(d_innpend, na.rm = TRUE),
+    sd_syss    = sd(g_syss_pct, na.rm = TRUE),
+    cor_innpend_syss = {
+      if (n_obs >= 2 && sd_innpend > 0 && sd_syss > 0) {
+        cor(d_innpend, g_syss_pct, use = 'complete.obs')
+      } else {
+        NA_real_
+      }
+    },
+    .groups = "drop"
+  )
+
+cor_innpend_syss
+
+```
+
+# 4.Sammenhengen mellom befolkning og sysselsetting
+
+```{r}
+# Dette konstruerer et paneldatasett på formen (kommunenummer, år, befolkning, sysselsetting).
+# Siden datakildene dekker ulike år, avgrenses utvalget automatisk til observasjoner som finnes i begge.
+
+panel_bef_syss <- demografi_total %>%
+  # Standardiser nøkkelvariabler (kommunenummer som 4-sifret streng og år som heltall)
+  mutate(
+    kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+    år = as.integer(år)
+  ) %>%
+  # Aggreger til total befolkning per kommune og år (summerer over aldersgrupper)
+  group_by(kommunenummer, år) %>%
+  summarise(
+    befolkning = sum(bef, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  # Koble på sysselsetting fra syss (arbeidssted) uten å lagre mellomdatasett
+  left_join(
+    syss %>%
+      mutate(
+        kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+        år = as.integer(år),
+        sysselsetting = Arbeidssted
+      ) %>%
+      select(kommunenummer, år, sysselsetting),
+    by = c("kommunenummer", "år")
+  ) %>%
+  # Beholder kun kommune-år som finnes i begge datakilder (implisitt felles år) og som har gyldige verdier
+  filter(
+    !is.na(befolkning),
+    !is.na(sysselsetting)
+  )
+
+```
+
+```{r}
+# Pooled regresjon (uten kommune- og årsspesifikasjon)
+
+# Konstruerer et paneldatasett på kommune-år-nivå (kommunenummer, år, befolkning, sysselsetting).
+# Utvalget begrenses til kommune-år-observasjoner som finnes i begge datakilder.
+
+m_pooled <- lm(sysselsetting ~ befolkning, data = panel_bef_syss)
+```
+
+```{r}
+# Regresjon med faste effekter for både kommune og år (two-way fixed effects)
+
+# Kommune-faste effekter kontrollerer for tidinvariante kommuneegenskaper, mens år-faste effekter kontrollerer for felles nasjonale sjokk og trender. Standardfeil er klustret på kommunenivå.
+
+m_fe <- fixest::feols(
+  sysselsetting ~ befolkning | kommunenummer + år,
+  data = panel_bef_syss,
+  cluster = ~ kommunenummer
+)
+
+```
+
+```{r}
+# Tabellen sammenligner koeffisienten til befolkning i pooled-modellen og i FE-modellen.
+# Dette gjør det enkelt å se hvordan kontroll for kommune- og årsfaste effekter påvirker estimatet.
+
+modelsummary(
+  list(
+    "Pooled OLS" = m_pooled,
+    "Kommune + år FE" = m_fe
+  ),
+  stars = TRUE,
+  statistic = "({std.error})",
+  gof_omit = "IC|Log|Adj|F|RMSE"
+)
+
+```
+
+Sammenlign resultatene for disse to regresjonsmodellene:
+
+I den pooled regresjonen er sysselsetting den avhengige variabelen og
+befolkning forklaringsvariabelen. Modellen skiller ikke mellom kommuner
+og år, men behandler alle kommune-år-observasjoner samlet. Estimatet
+utnytter derfor både forskjeller mellom kommuner og endringer innen
+samme kommune over tid for å beskrive sammenhengen mellom befolkning og
+sysselsetting. Koeffisienten på 0,696 innebærer at en økning i
+befolkningen på en person i gjennomsnitt er assosiert med om lag 0,696
+flere sysselsatte.
+
+Når faste effekter for både kommuner og år inkluderes, kontrollerer
+modellen for kommune-spesifikke faktorer som er konstante over tid, samt
+felles nasjonale sjokk i hvert år. I denne spesifikasjonen identifiseres
+sammenhengen mellom befolkning og sysselsetting utelukkende ved hjelp av
+variasjon innen samme kommune over tid. Koeffisienten på 0,601 innebærer
+at en økning i befolkningen på en person innen en kommune i gjennomsnitt
+er assosiert med om lag 0,601 flere sysselsatte.
+
+At koeffisienten i modellen med faste effekter er lavere enn i den
+pooled regresjonen, indikerer at en del av den positive sammenhengen i
+pooled modellen skyldes varige strukturelle forskjeller mellom kommuner
+som kontrolleres for når faste effekter inkluderes.
+
+Sammenlign med resultater for korrelasjonskoeﬀisienter i deloppgaven
+foran:
+
+Kan resultatene fra slike regresjonsmodeller i større grad enn
+korrelasjonskoeﬀisienten tolkes kausalt?
+
+Resultatene fra regresjonsmodellene kan i større grad enn en enkel
+korrelasjonskoeffisient tolkes kausalt. En korrelasjonskoeffisient viser
+kun om to variabler samvarierer. Den kontrollerer ikke for andre
+forhold. Regresjonsmodellene kontrollerer derimot for flere viktige
+faktorer. Når faste effekter for kommuner og år inkluderes, tas det
+hensyn til både varige forskjeller mellom kommuner og felles sjokk som
+rammer alle kommuner i samme år. Estimatene bygger da på endringer innen
+samme kommune over tid. Dette gir et bedre grunnlag for kausal tolkning.
+Likevel kan resultatene ikke tolkes som fullt ut kausale. Det kan
+fortsatt finnes omvendt kausalitet og tidsvarierende forhold som ikke er
+kontrollert for i modellen.
+
+# 6. En multippel regresjonsmodell for folketallsutvikling
+
+```{r}
+# Kommunenummer -> fylkesnummer -> landsdel
+# Forsøk også å ta innen dummyvariabel for landsdel (for eksempel sør, vest, øst, nord, og Trøndelag)
+add_landsdel <- function(df, knr = kommunenummer) {
+  df %>%
+    mutate(
+      fylke = as.integer(substr(!!rlang::ensym(knr), 1, 2)),
+      landsdel = case_when(
+        fylke %in% c(3, 31, 32, 33, 34) ~ "øst", # Øst: Oslo + Østfold/Akershus/Buskerud/Innlandet
+        fylke %in% c(39, 40, 42) ~ "sør",        # Sør: Vestfold/Telemark/Agder
+        fylke %in% c(11, 46, 15) ~ "vest",       # Vest: Rogaland/Vestland/Møre og Romsdal
+        fylke %in% c(50) ~ "Trøndelag",          # Trøndelag
+        fylke %in% c(18, 55, 56) ~ "nord",       # Nord: Nordland/Troms/Finnmark
+        TRUE ~ NA_character_
+      ), landsdel = factor(landsdel, levels = c("øst", "sør", "vest", "Trøndelag", "nord")))}
+
+# Fastsetter sentralitetsindeksen til verdien i 2023 (anbefalt som tilnærmet tidsinvariant mål)
+sent_fixed <- sent_long %>%
+  filter(år == 2023) %>%
+  select(kommunenummer, sentralitet = indeks)
+```
+
+```{r}
+# Samler alle variablene som brukes i oppgaven i datasettet df_6 før estimering av regresjonsmodell
+df_6 <- andel_20_29 %>%
+  transmute(
+    kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+    år = as.integer(år), folketall, andel_20_29) %>%
+  add_landsdel(kommunenummer) %>% 
+  left_join(sent_fixed, by = "kommunenummer") %>%   
+  left_join(ledig %>% rename(arbeidsledighet_pct = ledig), by = c("kommunenummer", "år")) %>%
+  left_join(andel_hoyere %>% rename(hoyere_utdanning_andel = andel_hoyere), by = c("kommunenummer", "år")) %>%
+  left_join(pendl_std %>% 
+              select(kommunenummer, år, nettopend) %>%
+              rename(netto_innpendling_per1000 = nettopend), by = c("kommunenummer", "år")) %>%
+  left_join(flytt_std %>%
+              select(kommunenummer, år, nettoflytt_per1000) %>%
+              mutate(netto_utflytting_per1000 = -nettoflytt_per1000) %>%
+              select(-nettoflytt_per1000), by = c("kommunenummer", "år")) %>%
+  left_join(kvpris_ene %>% select(kommunenummer, år, kvpris), by = c("kommunenummer", "år")) %>%
+  left_join(syss %>%
+      mutate(kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"), år = as.integer(år)) %>%
+      transmute(kommunenummer, år, sysselsetting = Arbeidssted), by = c("kommunenummer", "år")) %>%
+  mutate(
+    sysselsetting_per1000 = 1000 * sysselsetting / folketall,
+    ln_boligpris = if_else(is.finite(kvpris) & kvpris > 0, log(kvpris), NA_real_)
+  )
+
+```
+
+### start-år-modell
+
+```{r}
+# Forklaringsvariabler som inngår i modellen
+x_cols <- c("sentralitet","arbeidsledighet_pct","hoyere_utdanning_andel",
+            "sysselsetting_per1000","netto_innpendling_per1000",
+            "netto_utflytting_per1000","ln_boligpris","andel_20_29")
+
+# Identifiserer det tidligste året med komplette observasjoner for hver kommune
+df_6_startyear <- df_6 %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    start_år = suppressWarnings(min(år[complete.cases(across(all_of(c("folketall", x_cols))))])),
+    end_år   = suppressWarnings(max(år[is.finite(folketall)])),
+    .groups = "drop"
+  ) %>%
+  filter(is.finite(start_år), is.finite(end_år), start_år < end_år)
+
+# Henter forklaringsvariabler og folketall fra startåret
+df_6_X_start <- df_6 %>%
+  inner_join(df_6_startyear, by = "kommunenummer") %>%
+  filter(år == start_år) %>%
+  select(kommunenummer, landsdel, start_år, folketall_start = folketall, all_of(x_cols))
+
+# Henter folketall fra sluttåret
+df_6_y_end <- df_6 %>%
+  inner_join(df_6_startyear, by = "kommunenummer") %>%
+  filter(år == end_år) %>%
+  select(kommunenummer, end_år, folketall_end = folketall)
+
+# Konstruerer tverrsnittsdatasett og beregner samlet folketallsvekst
+df_6_csA <- df_6_X_start %>%
+  inner_join(df_6_y_end, by = "kommunenummer") %>%
+  mutate(
+    folketallsvekst = 100 * (folketall_end - folketall_start) / folketall_start
+  ) %>%
+  filter(is.finite(folketallsvekst)) %>%
+  filter(complete.cases(across(all_of(c("folketallsvekst", x_cols, "landsdel")))))
+
+# Modell A: forklaringsvariabler målt i startåret
+m_6A <- lm(
+  folketallsvekst ~ sentralitet + arbeidsledighet_pct + hoyere_utdanning_andel +
+    sysselsetting_per1000 + netto_innpendling_per1000 + netto_utflytting_per1000 +
+    ln_boligpris + andel_20_29 + factor(landsdel),
+  data = df_6_csA
+)
+summary(m_6A)
+
+# Denne modellen er en start-år-modell
+# start_år angir det tidligste året med komplette forklaringsvariabler for hver kommune
+# end_år angir det siste året med tilgjengelige folketall
+# Den avhengige variabelen er kommunens samlede prosentvise folketallsvekst over hele observasjonsperioden
+# Alle forklaringsvariabler er målt i startåret
+# Sentralitet er representert ved verdien i 2023 som et tilnærmet tidsinvariant strukturelt mål
+# Øst fungerer som referansekategori for landsdel
+# Koeffisientene for øvrige landsdeler viser gjennomsnittlige forskjeller relativt til Østlandet,
+# kontrollert for øvrige forklaringsvariabler
+```
+
+### periode-gjennomsnitt-modell
+
+```{r}
+# Beregner periodegjennomsnitt for forklaringsvariablene
+# For hver kommune tas gjennomsnittet av hver forklaringsvariabel
+# over hele observasjonsperioden, fra start_år til end_år.
+# Denne tilnærmingen fanger opp kommunens langsiktige, gjennomsnittlige
+# strukturelle kjennetegn, snarere enn nivået i et enkelt år.
+
+df_6_X_mean <- df_6 %>%
+  inner_join(df_6_startyear, by = "kommunenummer") %>%
+  filter(år >= start_år, år <= end_år) %>%
+  group_by(kommunenummer, start_år, end_år) %>%
+  summarise(
+    across(all_of(x_cols), ~ mean(.x, na.rm = TRUE)),
+    landsdel = first(landsdel), 
+    folketall_start = first(folketall[år == start_år]),
+    .groups = "drop"
+  )
+
+# Konstruerer tverrsnittsdatasett for modell B ved å kombinere
+# periodegjennomsnittlige forklaringsvariabler med folketall i sluttåret
+df_6_csB <- df_6_X_mean %>%
+  inner_join(df_6_y_end, by = "kommunenummer") %>%
+  mutate(
+    folketallsvekst = 100 * (folketall_end - folketall_start) / folketall_start
+  ) %>%
+  filter(is.finite(folketallsvekst)) %>%
+  filter(complete.cases(across(all_of(c("folketallsvekst", x_cols, "landsdel")))))
+
+# Modell B: periode-gjennomsnitt-modell
+# Forklaringsvariablene representerer gjennomsnittlige nivåer
+# over hele observasjonsperioden for hver kommune
+m_6B <- lm(
+  folketallsvekst ~ sentralitet + arbeidsledighet_pct + hoyere_utdanning_andel +
+    sysselsetting_per1000 + netto_innpendling_per1000 + netto_utflytting_per1000 +
+    ln_boligpris + andel_20_29 + landsdel,
+  data = df_6_csB
+)
+summary(m_6B)
+
+# Den avhengige variabelen er kommunens samlede prosentvise folketallsvekst, identisk definert som i modell A.
+# Forklaringsvariablene er definert som gjennomsnitt over perioden fra start_år til end_år, og reflekterer langsiktige strukturelle forhold.
+# Sentralitet er representert ved verdien i 2023 og er konstant over perioden, slik at periodegjennomsnittet tilsvarer denne faste verdien.
+# Denne modellformuleringen kan tolkes som en sammenheng mellom kommunens gjennomsnittlige kjennetegn og langsiktig befolkningsutvikling, men gir ikke grunnlag for kausale tolkninger.
+
+```
+
+### FE-modell
+
+```{r}
+# Paneldataanalyse med faste effekter (Fixed Effects)
+
+# Konstruerer årlig befolkningsvekst som log-differanse
+# Log-differansen i folketall mellom to påfølgende år
+# kan tolkes som tilnærmet prosentvis årlig befolkningsvekst.
+df_6_fe <- df_6 %>%
+  mutate(
+    kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+    år = as.integer(år),
+    folketall = as.numeric(folketall)
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    dlog_folketall = log(folketall) - lag(log(folketall))
+  ) %>%
+  ungroup() %>%
+  # Fjerner første observasjonsår per kommune (der lag er udefinert),
+  # samt observasjoner med ugyldige log-verdier
+  filter(is.finite(dlog_folketall)) %>%
+  # Beholder kun observasjoner der alle forklaringsvariabler
+  # som inngår i FE-modellen er observert
+  filter(
+    complete.cases(
+      dlog_folketall,
+      arbeidsledighet_pct,
+      hoyere_utdanning_andel,
+      sysselsetting_per1000,
+      netto_innpendling_per1000,
+      netto_utflytting_per1000,
+      ln_boligpris,
+      andel_20_29
+    )
+  )
+
+# Two-way Fixed Effects-modell: kommune- og årsfaste effekter
+# Modellen inkluderer faste effekter for både kommuner og år,
+# og utnytter dermed kun variasjon innen samme kommune over tid.
+# Standardfeil klustreres på kommunenivå for å ta hensyn til
+# serial korrelasjon og heteroskedastisitet innen kommuner.
+m_6FE <- feols(
+  dlog_folketall ~ arbeidsledighet_pct + hoyere_utdanning_andel +
+    sysselsetting_per1000 + netto_innpendling_per1000 + netto_utflytting_per1000 +
+    ln_boligpris + andel_20_29
+  | kommunenummer + år,
+  data = df_6_fe,
+  cluster = ~ kommunenummer
+)
+summary(m_6FE)
+
+# FE-modellen utnytter kun variasjon innen samme kommune over tid og identifiserer hvordan årlige endringer i forklaringsvariablene samvarierer med årlig befolkningsvekst.
+# Tidsinvariante forhold som sentralitet og landsdel fanges opp av kommune-faste effekter og kan derfor ikke estimeres eksplisitt.
+# Sammenlignet med tverrsnittsmodellene (modell A og B) mister flere variabler statistisk signifikans i FE-modellen. Dette er forventet og reflekterer at FE-modellen kontrollerer for uobserverte, tid-invariante forskjeller mellom kommuner.
+# Netto utflytting per 1000 innbyggere har en negativ og signifikant sammenheng med årlig befolkningsvekst innen samme kommune.
+# Andel 20–29 år har en positiv og signifikant sammenheng med årlig befolkningsvekst innen kommuner.
+```
+
+# 7. En multippel regresjonsmodell for sysselsettingsvekst
+
+### start-år-modell
+
+```{r}
+# Modell A (start-år): sysselsettingsvekst som avhengig variabel
+
+# Finn start- og sluttår per kommune (krever at både X, folketall og sysselsetting finnes)
+df_7_startyear <- df_6 %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    # start_år: tidligste år der alle X + folketall + sysselsetting er tilgjengelig
+    start_år = suppressWarnings(min(år[
+      complete.cases(across(all_of(c(x_cols, "folketall", "sysselsetting"))))
+    ])),
+    # end_år: siste år der både folketall og sysselsetting finnes
+    end_år = suppressWarnings(max(år[is.finite(folketall) & is.finite(sysselsetting)])),
+    .groups = "drop"
+  ) %>%
+  filter(is.finite(start_år), is.finite(end_år), start_år < end_år)
+
+# Hent forklaringsvariabler fra startåret + startverdier for folketall og sysselsetting
+df_7_X_start <- df_6 %>%
+  inner_join(df_7_startyear, by = "kommunenummer") %>%
+  filter(år == start_år) %>%
+  select(
+    kommunenummer, landsdel, start_år,
+    folketall_start = folketall,
+    syss_start = sysselsetting,
+    all_of(x_cols)
+  )
+
+# Hent sluttverdier (end_år) for folketall og sysselsetting
+df_7_end <- df_6 %>%
+  inner_join(df_7_startyear, by = "kommunenummer") %>%
+  filter(år == end_år) %>%
+  select(
+    kommunenummer, end_år,
+    folketall_end = folketall,
+    syss_end = sysselsetting
+  )
+
+# Konstruer tverrsnitt: beregn samlet sysselsettingsvekst (Y) og folketallsvekst (ny X)
+df_7_csA <- df_7_X_start %>%
+  inner_join(df_7_end, by = "kommunenummer") %>%
+  mutate(
+    # Avhengig variabel: samlet prosentvis sysselsettingsvekst
+    sysselsettingsvekst = 100 * (syss_end - syss_start) / syss_start,
+    # Ny forklaringsvariabel: samlet prosentvis folketallsvekst
+    folketallsvekst = 100 * (folketall_end - folketall_start) / folketall_start
+  ) %>%
+  filter(is.finite(sysselsettingsvekst), is.finite(folketallsvekst)) %>%
+  filter(complete.cases(across(all_of(c("sysselsettingsvekst", "folketallsvekst", x_cols, "landsdel")))))
+
+
+# Modell 7A: Start-år-modell (tverrsnitt)
+m_7A <- lm(
+  sysselsettingsvekst ~ folketallsvekst + sentralitet + arbeidsledighet_pct +
+    hoyere_utdanning_andel + sysselsetting_per1000 + netto_innpendling_per1000 +
+    netto_utflytting_per1000 + ln_boligpris + andel_20_29 + factor(landsdel),
+  data = df_7_csA
+)
+
+summary(m_7A)
+
+# Dette er en tverrsnittmodell der sysselsettingsvekst over hele perioden er avhengig variabel.
+# Forklaringsvariablene (unntatt folketallsvekst) måles i startåret.
+# Folketallsvekst inkluderes som egen forklaringsvariabel (vekstrate over hele perioden).
+# Sentralitet er representert ved 2023-verdien (tilnærmet tidsinvariant).
+# Øst er referansekategori for landsdel (via factor(landsdel)).
+
+```
+
+### periode-gjennomsnitt-modell
+
+```{r}
+# Modell B (periode-gjennomsnitt): sysselsettingsvekst som avhengig variabel
+
+# Finn start- og sluttår per kommune (krever at folketall og sysselsetting finnes)
+df_7_startyear <- df_6 %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  summarise(
+    # start_år: tidligste år der alle X + folketall + sysselsetting er tilgjengelig
+    start_år = suppressWarnings(min(år[
+      complete.cases(across(all_of(c(x_cols, "folketall", "sysselsetting"))))
+    ])),
+    # end_år: siste år der både folketall og sysselsetting finnes
+    end_år = suppressWarnings(max(år[is.finite(folketall) & is.finite(sysselsetting)])),
+    .groups = "drop"
+  ) %>%
+  filter(is.finite(start_år), is.finite(end_år), start_år < end_år)
+
+# Periodegjennomsnitt for forklaringsvariablene (mellom start_år og end_år)
+# Samtidig hentes folketall_start og syss_start fra start_år.
+df_7_X_mean <- df_6 %>%
+  inner_join(df_7_startyear, by = "kommunenummer") %>%
+  filter(år >= start_år, år <= end_år) %>%
+  group_by(kommunenummer, start_år, end_år) %>%
+  summarise(
+    across(all_of(x_cols), ~ mean(.x, na.rm = TRUE)), 
+    landsdel = first(landsdel),
+    folketall_start = first(folketall[år == start_år]),
+    syss_start      = first(sysselsetting[år == start_år]),
+    .groups = "drop"
+  )
+
+# 3) Sluttverdier (end_år) for folketall og sysselsetting
+df_7_y_end <- df_6 %>%
+  inner_join(df_7_startyear, by = "kommunenummer") %>%
+  filter(år == end_år) %>%
+  select(
+    kommunenummer, end_år,
+    folketall_end = folketall,
+    syss_end      = sysselsetting
+  )
+
+# 4) Tverrsnittsdatasett + beregning av vekstrater (Y og ny X)
+df_7_csB <- df_7_X_mean %>%
+  inner_join(df_7_y_end, by = "kommunenummer") %>%
+  mutate(
+    # Avhengig variabel: samlet prosentvis sysselsettingsvekst
+    sysselsettingsvekst = 100 * (syss_end - syss_start) / syss_start,
+    # Ny forklaringsvariabel: samlet prosentvis folketallsvekst
+    folketallsvekst     = 100 * (folketall_end - folketall_start) / folketall_start
+  ) %>%
+  filter(is.finite(sysselsettingsvekst), is.finite(folketallsvekst)) %>%
+  filter(complete.cases(across(all_of(c("sysselsettingsvekst","folketallsvekst", x_cols, "landsdel")))))
+
+
+# 5) Modell 7B: Periode-gjennomsnitt-modell (tverrsnitt)
+m_7B <- lm(
+  sysselsettingsvekst ~ folketallsvekst + sentralitet + arbeidsledighet_pct +
+    hoyere_utdanning_andel + sysselsetting_per1000 + netto_innpendling_per1000 +
+    netto_utflytting_per1000 + ln_boligpris + andel_20_29 + factor(landsdel),
+  data = df_7_csB
+)
+
+summary(m_7B)
+
+
+# Modell B bruker periodegjennomsnitt av forklaringsvariabler (start_år–end_år).
+# Sysselsettingsvekst er samlet vekst fra start_år til end_år.
+# Folketallsvekst inkluderes som egen forklaringsvariabel (samme periode).
+# Sentralitet er i praksis tidsinvariant (fast 2023-verdi), og gjennomsnittet tilsvarer denne.
+
+```
+
+### FE-modell
+
+```{r}
+# Paneldata FE (two-way): sysselsettingsvekst som avhengig variabel
+
+df_7_fe <- df_6 %>%
+  mutate(
+    kommunenummer = stringr::str_pad(as.character(kommunenummer), 4, "left", "0"),
+    år = as.integer(år),
+    folketall = as.numeric(folketall),
+    sysselsetting = as.numeric(sysselsetting)
+  ) %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    # Årlig vekst: log-differanse (tilnærmet prosentvis vekst)
+    dlog_sysselsetting = log(sysselsetting) - lag(log(sysselsetting)),
+    dlog_folketall     = log(folketall)     - lag(log(folketall))
+  ) %>%
+  ungroup() %>%
+  # Fjerner første år per kommune + ugyldige log-verdier
+  filter(is.finite(dlog_sysselsetting), is.finite(dlog_folketall)) %>%
+  # Beholder kun rader der alle forklaringsvariabler i FE-modellen er observert
+  filter(
+    complete.cases(
+      arbeidsledighet_pct,
+      hoyere_utdanning_andel,
+      sysselsetting_per1000,
+      netto_innpendling_per1000,
+      netto_utflytting_per1000,
+      ln_boligpris,
+      andel_20_29
+    )
+  )
+
+# Two-way FE: kommune + år, standardfeil klustrert på kommune
+m_7FE <- feols(
+  dlog_sysselsetting ~ dlog_folketall + arbeidsledighet_pct + hoyere_utdanning_andel +
+    sysselsetting_per1000 + netto_innpendling_per1000 + netto_utflytting_per1000 +
+    ln_boligpris + andel_20_29
+  | kommunenummer + år,
+  data = df_7_fe,
+  cluster = ~ kommunenummer
+)
+summary(m_7FE)
+
+# Avhengig variabel er årlig sysselsettingsvekst, målt som log-differanse i sysselsetting.
+# I tråd med oppgaveteksten inngår befolkningsutvikling som forklaringsvariabel, representert ved årlig log-differanse i folketall.
+# Modellen inkluderer kommune- og årsfaste effekter og utnytter kun variasjon innen samme kommune over tid.
+# Tidsinvariante forhold som sentralitet og landsdel fanges dermed opp av kommune-faste effekter.
+# Standardfeil er klustrert på kommunenivå.
+
+```
 
 # Litteraturliste
 
