@@ -64,6 +64,11 @@ library(lubridate)
 library(flextable)
 library(dplyr)
 library(janitor)
+library(stringr)
+library(tibble)
+library(lwgeom)
+library(tidyverse)
+library(fixest)
 options(
   paged.print = FALSE,
   scipen = 999
@@ -723,10 +728,6 @@ kvpris_ene <- bolig %>%
 andel_hoyere <- utdanning %>%
   std_k(kommunenummer) %>%
   std_year(år) %>%
-  filter(nivå %in% c(
-    "Universitets- og høgskolenivå, kort",
-    "Universitets- og høgskolenivå, lang"
-  )) %>%
   summarise(
     andel_hoyere = sum(utdanand, na.rm = TRUE),
     .by = c(kommunenummer, år)
@@ -744,13 +745,13 @@ flytt_std <- flytt %>%
   )
 
 # Pendling per 1000: innpendling/utpendling + pendlingsbalanse (netto)
-pendl_std <- pendl_per1000 %>%
+pendl_std <- pendl %>%
   std_k(kommunenummer) %>%
   std_year(år) %>%
   summarise(
-    innpend_per1000     = mean(innpend_per1000_arbpl, na.rm = TRUE),
-    utpend_per1000      = mean(utpend_per1000_bosatt, na.rm = TRUE),
-    pendlingsbalanse    = mean(pendlingsbalanse, na.rm = TRUE),
+    Innpendlere     = mean(Innpendlere, na.rm = TRUE),
+    Utpendlere      = mean(Utpendlere, na.rm = TRUE),
+    nettopend    = mean(nettopend, na.rm = TRUE),
     .by = c(kommunenummer, år)
   )
 ```
@@ -818,9 +819,9 @@ cor_utflytt_2020_2023
 
 ```{r}
 cor_innpend_2020_2023 <- pendl_std %>%
-  filter(år %in% c(2020, 2023), !is.na(innpend_per1000)) %>%
+  filter(år %in% c(2020, 2023), !is.na(Innpendlere)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
-  cor_by_year(indeks, innpend_per1000)
+  cor_by_year(indeks, Innpendlere)
 cor_innpend_2020_2023
 ```
 
@@ -828,9 +829,9 @@ cor_innpend_2020_2023
 
 ```{r}
 cor_utpend_2020_2023 <- pendl_std %>%
-  filter(år %in% c(2020, 2023), !is.na(utpend_per1000)) %>%
+  filter(år %in% c(2020, 2023), !is.na(Utpendlere)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
-  cor_by_year(indeks, utpend_per1000)
+  cor_by_year(indeks, Utpendlere)
 cor_utpend_2020_2023
 ```
 
@@ -887,7 +888,7 @@ cor_ledig_flytt_2013_2023
 
 ```
 
-# ledig vs pendl（brutto=utpend, netto=pendlingsbalanse）（2013, 2023）
+# ledig vs pendl（brutto=utpend, netto=nettopend）（2013, 2023）
 
 ```{r}
 cor_ledig_utpend_2013_2023 <- pendl_std %>%
@@ -895,8 +896,8 @@ cor_ledig_utpend_2013_2023 <- pendl_std %>%
   left_join(ledig, by = c("kommunenummer", "år")) %>%
   group_by(år) %>%
   summarise(
-    cor_brutto = cor(ledig, utpend_per1000, use = "complete.obs"),
-    cor_netto  = cor(ledig, pendlingsbalanse, use = "complete.obs"),
+    cor_brutto = cor(ledig, Utpendlere, use = "complete.obs"),
+    cor_netto  = cor(ledig, nettopend, use = "complete.obs"),
     .groups = "drop"
   ) %>%
   arrange(år)
@@ -928,9 +929,9 @@ cor_bolig_andel20_29_2013_2023
 ```{r}
 cor_bolig_innpend_2013_2023 <- kvpris_ene %>%
   filter(år %in% c(2013, 2023)) %>%
-  left_join(pendl_std %>% select(kommunenummer, år, innpend_per1000),
+  left_join(pendl_std %>% select(kommunenummer, år, Innpendlere),
             by = c("kommunenummer", "år")) %>%
-  cor_by_year(kvpris, innpend_per1000)
+  cor_by_year(kvpris, Innpendlere)
 cor_bolig_innpend_2013_2023
 ```
 
@@ -939,9 +940,9 @@ cor_bolig_innpend_2013_2023
 ```{r}
 cor_bolig_utpend_2013_2023 <- kvpris_ene %>%
   filter(år %in% c(2013, 2023)) %>%
-  left_join(pendl_std %>% select(kommunenummer, år, utpend_per1000),
+  left_join(pendl_std %>% select(kommunenummer, år, Utpendlere),
             by = c("kommunenummer", "år")) %>%
-  cor_by_year(kvpris, utpend_per1000)
+  cor_by_year(kvpris, Utpendlere)
 cor_bolig_utpend_2013_2023
 ```
 
@@ -977,14 +978,14 @@ cor_nettoflytt_andel20_29_2013_2023 <- flytt_std %>%
 cor_nettoflytt_andel20_29_2013_2023
 ```
 
-# nettoflytt per1000 vs netto utpend（= pendlingsbalanse）（2013, 2023）
+# nettoflytt per1000 vs netto utpend（= nettopend）（2013, 2023）
 
 ```{r}
 cor_nettoflytt_netto_utpend_2013_2023 <- flytt_std %>%
   filter(år %in% c(2013, 2023)) %>%
-  left_join(pendl_std %>% select(kommunenummer, år, pendlingsbalanse),
+  left_join(pendl_std %>% select(kommunenummer, år, nettopend),
             by = c("kommunenummer", "år")) %>%
-  cor_by_year(nettoflytt_per1000, pendlingsbalanse)
+  cor_by_year(nettoflytt_per1000, nettopend)
 cor_nettoflytt_netto_utpend_2013_2023
 
 ```
@@ -992,15 +993,6 @@ cor_nettoflytt_netto_utpend_2013_2023
 # netto utpendling og bolig kvpris i tilgrensende kommuner
 
 ```{r}
-#| warning: false
-library(sf)
-library(spdep)
-library(dplyr)
-library(stringr)
-library(tibble)
-library(lwgeom)
-
-
 dsn <- "WFS:https://wfs.geonorge.no/skwms1/wfs.inspire-au?service=WFS"
 
 # Kommunegrenser + naboskap
@@ -1038,11 +1030,11 @@ kvpris_nabo_mean <- edges_knr %>%
 
 # Koble til netto utpendling og beregn korrelasjon
 cor_netto_utpend_nabo_kvpris_2013_2023 <- pendl_std %>%
-  select(kommunenummer, år, pendlingsbalanse) %>%
+  select(kommunenummer, år, nettopend) %>%
   left_join(kvpris_nabo_mean, by = c("kommunenummer", "år")) %>%
   filter(år %in% c(2013, 2023)) %>%
   summarise(
-    cor = cor(pendlingsbalanse, kvpris_nabo_mean, use = "complete.obs"),
+    cor = cor(nettopend, kvpris_nabo_mean, use = "complete.obs"),
     .by = år
   ) %>%
   arrange(år)
@@ -1253,8 +1245,8 @@ cor_syss_bolig
 pendl_syss_panel <- pendl_std %>%
   std_k(kommunenummer) %>%
   std_year(år) %>%
-  select(kommunenummer, år, innpend_per1000) %>%
-  filter(is.finite(innpend_per1000)) %>%
+  select(kommunenummer, år, Innpendlere) %>%
+  filter(is.finite(Innpendlere)) %>%
   inner_join(
     syss %>%
       std_k(kommunenummer) %>%
@@ -1266,7 +1258,7 @@ pendl_syss_panel <- pendl_std %>%
   arrange(kommunenummer, år) %>%
   group_by(kommunenummer) %>%
   mutate(
-    d_innpend = innpend_per1000 - lag(innpend_per1000),  # årlig endring i innpendling
+    d_innpend = Innpendlere - lag(Innpendlere),  # årlig endring i innpendling
     g_syss_pct = 100 * (syss / lag(syss) - 1)            # % endring i sysselsetting
   ) %>%
   ungroup()
@@ -1354,10 +1346,6 @@ m_fe <- fixest::feols(
 ```
 
 ```{r}
-#| warning: false
-
-library(modelsummary)
-
 # Tabellen sammenligner koeffisienten til befolkning i pooled-modellen og i FE-modellen.
 # Dette gjør det enkelt å se hvordan kontroll for kommune- og årsfaste effekter påvirker estimatet.
 
@@ -1416,12 +1404,6 @@ fortsatt finnes omvendt kausalitet og tidsvarierende forhold som ikke er
 kontrollert for i modellen.
 
 # 6. En multippel regresjonsmodell for folketallsutvikling
-
-```{r}
-library(tidyverse)
-library(fixest)
-library(dplyr)
-```
 
 ```{r}
 # Kommunenummer -> fylkesnummer -> landsdel
