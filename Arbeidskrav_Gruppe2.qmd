@@ -548,7 +548,8 @@ utd_merged <- utdanning %>%
       distinct(knr, .keep_all = TRUE),  # Tar kun første forekomst av hver kommune
     by = c("kommunenummer" = "knr")
   ) %>%
-  filter(!is.na(`Klasse 2023`))
+  filter(!is.na(`Klasse 2023`)) %>%
+  filter(!is.infinite(utdanand))
 
 # Beregne gjennomsnittlig andel per sentralitetsklasse per år
 utd_snitt <- utd_merged %>%
