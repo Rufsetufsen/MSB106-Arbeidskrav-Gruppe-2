@@ -63,6 +63,7 @@ library(knitr)
 library(lubridate)
 library(flextable)
 library(dplyr)
+library(janitor)
 options(
   paged.print = FALSE,
   scipen = 999
@@ -112,11 +113,36 @@ load("syssendr0024.rdata")
 
 # Datainnhenting
 
+Denne studien benytter kommunevise paneldata for å analysere
+sammenhenger mellom sentralitet, demografi, arbeidsmarked, boligmarked
+og flyttemønstre i norske kommuner. Nedenfor gis en kort redegjørelse
+for de enkelte datasettene og deres rolle i de videre deskriptive og
+analytiske analysene.
+
 ## Folketall
+
+Folketall er en sentral variabel i analysen av regional utvikling og
+brukes både som utfallsvariabel og som skaleringsgrunnlag for andre
+størrelser. I den deskriptive delen analyseres prosentvis
+folketallsvekst etter 2000 gjennom kartframstillinger og tidsserier for
+ulike sentralitetskategorier. Videre inngår folketallsutvikling som
+avhengig variabel i regresjonsanalysene, der formålet er å undersøke
+hvordan arbeidsmarked, boligpriser, utdanningsnivå, flytting og pendling
+samvarierer med endringer i befolkningen.
 
 ## Demografiske data
 
+Demografiske data, særlig alderssammensetningen i befolkningen, brukes
+til å analysere selektiv flytting og regionale livsløp. Spesiell vekt
+legges på aldersgruppen 20–29 år, som ofte er mest mobil. Andelen unge
+voksne inngår i kartframstillinger, tidsserier og korrelasjonsanalyser.
+
 ## Sentralitetsindeksen for norske kommuner
+
+Sentralitetsindeksen brukes som en overordnet strukturell
+forklaringsvariabel i analysen. Indeksen ligger til grunn for gruppering
+av kommuner i den deskriptive delen og brukes videre i
+korrelasjonsanalyser.
 
 Sentralitetsindeksen er en kode som beskriver hver kommunes sentralitet.
 Beregningen av sentralitetsindeksen er basert på reisetid til
@@ -147,6 +173,10 @@ Fjordane, Møre og Romsdal, Trøndelag og Nord-Norge).
 
 ## Prosentvis arbeidsledighet
 
+Arbeidsledighet benyttes som indikator på arbeidsmarkedets tilstand i
+kommunene. Variabelen inngår i kartframstillinger, tidsserier og
+korrelasjonsanalyser.
+
 Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som
 ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å
 starte. I Norge publiserer både NAV og Statistik sentralbyrå (SSB) tall
@@ -169,7 +199,8 @@ ledighetstall enn NAV.
 NAVs tall gir derimot et bedre bilde av hvor mange som faktisk mottat og
 har behov for oppføring fra et statlig organ, mens SSBs tall gir et
 bredere og mer helhetlig bilde av arbeidsledigheten i befolkningen som
-helhet.
+helhet. **Kilde:
+https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-arbeidsledighetstall**
 
 ```{r}
 #Leser av excel-filene
@@ -191,18 +222,32 @@ Sentralitet <-
   save(Sentralitet, file = "Sentralitet.rdata")
 ```
 
-**Kilde:
-https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-arbeidsledighetstall**
-
 ## Sysselsetting
+
+Sysselsettingsdata brukes til å analysere lokal næringsutvikling og
+arbeidsplassvekst, og inngår både som avhengig og forklaringsvariabel i
+analysene.
 
 ## Gjennomsnittlig kvadratmeterpris for bolig
 
+Boligpriser benyttes som mål på etterspørsel og attraktivitet i
+regionale boligmarkeder. Variabelen inngår i kart, tidsserier og
+regresjonsanalyser.
+
 ## Utdanningsnivå
+
+Utdanningsnivå brukes som indikator på kommunenes humankapital og
+analyseres i sammenheng med sentralitet, sysselsetting og boligpriser.
 
 ## Ut- og innflyttinger pr 1000 innbyggere
 
+Flyttedataene brukes til å analysere demografisk dynamikk og kommunenes
+attraktivitet, inkludert netto flytting og aldersspesifikke flytterater.
+
 ## Inn- og utpendling
+
+Pendlerdata brukes til å analysere funksjonelle arbeidsmarkedsregioner
+og samspillet mellom bosted og arbeidssted.
 
 # Resultater
 
@@ -1366,6 +1411,234 @@ cor_innpend_syss
 
 ```
 
+## Lagge en variabel
+
+```{r}
+bolig_flytt_lag <- bolig_flytt_panel %>%
+  arrange(kommunenummer, år) %>%
+  group_by(kommunenummer) %>%
+  mutate(
+    kvpris_lag1 = lag(kvpris)
+  ) %>%
+  ungroup()
+
+```
+
+For enkelte relasjoner, som mellom boligpriser og flytting, er det
+rimelig å anta at virkninger oppstår med tidsforsinkelse. Vi lagger
+derfor boligprisene ett år for å ta hensyn til tregheter i
+husholdningenes tilpasning.
+
+### Demeaning
+
+```{r}
+bolig_flytt_dm <- bolig_flytt_lag %>% # Fjerner nivåforskjeller og har kun tidsvariasjon innen kommunen igjen.
+  group_by(kommunenummer) %>%
+  mutate(
+    kvpris_lag1_dm = kvpris_lag1 - mean(kvpris_lag1, na.rm = TRUE),
+    nettoflytt_dm  = nettoflytt_per1000 - mean(nettoflytt_per1000, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+```
+
+```{r}
+cor_bolig_flytt_dm <- bolig_flytt_dm %>%
+  filter(is.finite(kvpris_lag1_dm), is.finite(nettoflytt_dm)) %>%
+  summarise(
+    cor = cor(kvpris_lag1_dm, nettoflytt_dm, use = "complete.obs")
+  )
+
+cor_bolig_flytt_dm
+```
+
+Demeaning fjerner tidsinvariante kommuneegenskaper som geografisk
+beliggenhet, størrelse og historisk sentralitet. Dette gjør at
+korrelasjonene i større grad reflekterer samvariasjon over tid innen
+samme kommune, snarere enn strukturelle forskjeller mellom kommuner.
+Dette er særlig nyttig i paneldata, der en kan risikere uekte
+korrelasjoner som er drevet av permanente nivåforskjeller.
+
+## Pearson vs Spearman
+
+Beregner en Spearman korrelasjonskoeffisient og en Pearson
+korrelasjonskoeffsient. Spearman-korrelasjon måler styrken og retningen
+til variablene som beveger seg i samme retning, uavhengig av om
+sammenhengen er lineær, mens Pearson-korrelasjon målers den lineære
+styrken og retningen til variablene mens de beveger seg kontinuerlig. Vi
+tar eksempelet mellom sentralitet og kvadratmeterpris
+
+```{r}
+sent_bolig <- kvpris_ene %>% # Gjør klart et datasett for beregningen
+  filter(år == 2023) %>%
+  left_join(sent_long, by = c("kommunenummer", "år")) %>%
+  filter(is.finite(indeks), is.finite(kvpris))
+
+```
+
+```{r}
+cor_sent_bolig <- tibble( 
+  pearson  = cor(sent_bolig$indeks, sent_bolig$kvpris,
+                 method = "pearson", use = "complete.obs"),
+  spearman = cor(sent_bolig$indeks, sent_bolig$kvpris,
+                 method = "spearman", use = "complete.obs")
+) # Beregner ut Pearson og Spearman
+
+cor_sent_bolig
+
+```
+
+Pearson- og Spearman-korrelasjonene er svært like i størrelse (0,715 og
+0,710). Dette indikerer at sammenhengen mellom variablene er tilnærmet
+lineær, og at resultatet ikke i vesentlig grad påvirkes av uteliggere
+eller skjev fordeling. Rangeringen av kommunene samsvarer godt med
+nivåforskjellene i variablene, noe som tyder på en stabil og systematisk
+samvariasjon.
+
+## Velg ut noen sammenhenger for visualisering med spredningsdiagrammer
+
+```{r}
+ggplot( #Plot for sentralitet og bologpris 2023
+  kvpris_ene %>%
+    filter(år == 2023) %>%
+    left_join(sent_long, by = c("kommunenummer", "år")),
+  aes(x = indeks, y = kvpris)
+) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Sentralitet og boligpriser",
+    subtitle = "Eneboliger, 2023",
+    x = "Sentralitetsindeks",
+    y = "Kvadratmeterpris (kr)"
+  ) +
+  theme_minimal()
+
+```
+
+Spredningsdiagrammet viser en klart stigende og tilnærmet lineær
+sammenheng, noe som støtter bruk av Pearson-korrelasjon.
+
+```{r}
+ggplot(
+  bolig_flytt_panel %>% filter(år == 2023),
+  aes(x = kvpris, y = nettoflytt_per1000)
+) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(
+    title = "Boligpriser og nettoflytting",
+    subtitle = "2023",
+    x = "Kvadratmeterpris (kr)",
+    y = "Nettoflytting per 1000 innbyggere"
+  ) +
+  theme_minimal()
+
+```
+
+Figuren indikerer en monoton, men ikke-lineær sammenheng, med betydelig
+spredning. Dette tilsier at Spearman-korrelasjonen gir et mer robust mål
+enn Pearson
+
+Korrelasjonskoeffisientene gir kun informasjon om samvariasjon, som er
+et statistiks mål på strken og retningen, men kan ikke helt tolke
+årsaksbestemmelsen. Sammenhengene kan være påvirket av simultanitet,
+utelatte variabler og strukturelle forskjeller mellom kommuner. Videre
+kan aggregert kommunedata skjule betydelig intern ulikheter. Resultatene
+bør derfor tolkes som deskriptive, og primært brukes som grunnlag for
+videre analyse.
+
+## Systematiske forskjeller mellom kommuner i ulike sentralitetskategorier
+
+```{r}
+cor_bolig_flytt_by_sentralitet <- bolig_flytt_panel %>%
+  left_join(
+    Sentralitet %>% select(knr, `Klasse 2023`),
+    by = c("kommunenummer" = "knr")
+  ) %>%
+  group_by(`Klasse 2023`) %>%
+  summarise(
+    cor = cor(kvpris, nettoflytt_per1000, use = "complete.obs"),
+    n = sum(complete.cases(kvpris, nettoflytt_per1000)),
+    .groups = "drop"
+  )
+
+cor_bolig_flytt_by_sentralitet
+
+```
+
+Korrelasjonsanalysene viser at sammenhengen varierer systematisk mellom
+kommuner i ulike sentralitetskategorier. For de fleste
+sentralitetsklasser (2–6) er korrelasjonen mellom variablene svak og
+svakt positiv. I de mest sentrale kommunene (klasse 1) er sammenhengen
+derimot klart negativ. Dette kan indikere at svært høye boligpriser i de
+største bykommunene bidrar til å begrense netto innflytting, blant annet
+ved at flere husholdninger velger å bosette seg i omlandskommuner og
+pendle inn til byene. Samtidig er antall observasjoner i denne gruppen
+lavt, noe som tilsier at resultatene bør tolkes med forsiktighet.
+Korrelasjonen mellom boligpriser og nettoflytting er sterkere i store
+byer enn i distriktskommuner, noe som kan indikere at boligmarkedet
+spiller en mer aktiv rolle i flyttebeslutninger i urbane strøk. Videre
+kan en forvente at sammenhengene varierer systematisk mellom ulike typer
+kommuner, slik de er klassifisert hos Andersson et al. (2020). For
+eksempel kan relasjonen mellom sysselsetting, boligpriser og flytting
+være sterkere i funksjonelle byregioner enn i perifere
+distriktskommuner. Dette gir derimot ikke et helt grunnlag for kausale
+tolkninger men kan indikere systematiske samvariasjoner som danner
+utgangspunkt for videre analyser og hypoteser.
+
+## Forskjeller mellom kommuner i ulike kategorier hos Andersson et al. (2020)
+
+```{r}
+kommune_typologi <- Sentralitet %>%
+  select(knr, `Klasse 2023`) %>%
+  mutate(
+    andersson_type = case_when(
+      `Klasse 2023` == 1 ~ "Storbykjerne",
+      `Klasse 2023` == 2 ~ "Forstad / omland",
+      `Klasse 2023` %in% c(3, 4) ~ "Regionale sentra",
+      `Klasse 2023` %in% c(5, 6) ~ "Perifere distrikter"
+    )
+  )
+
+```
+
+```{r}
+bolig_flytt_andersson <- bolig_flytt_panel %>%
+  left_join(
+    kommune_typologi,
+    by = c("kommunenummer" = "knr")
+  ) %>%
+  filter(!is.na(andersson_type))
+```
+
+```{r}
+cor_bolig_flytt_andersson <- bolig_flytt_andersson %>%
+  group_by(andersson_type) %>%
+  summarise(
+    cor = cor(kvpris, nettoflytt_per1000, use = "complete.obs"),
+    n   = sum(complete.cases(kvpris, nettoflytt_per1000)),
+    .groups = "drop"
+  )
+
+cor_bolig_flytt_andersson
+```
+
+Analysene viser tydelige forskjeller mellom kommuner gruppert etter en
+forenklet typologi inspirert av Andersson et al. (2020). For
+storbykjerner er korrelasjonen mellom boligpriser og nettoflytting klart
+negativ, noe som indikerer at svært høye boligpriser i de største
+bykommunene kan virke begrensende på netto innflytting. For regionale
+sentra, forstads- og omlandskommuner samt perifere distriktskommuner er
+sammenhengen derimot svakt positiv. Dette kan tolkes som at boligpriser
+i disse områdene i større grad reflekterer attraktivitet og
+etterspørsel, uten de samme kapasitetsbegrensningene som i
+storbykjerner. Her er også antall observasjoner for storbykjerner
+relativt lavt, noe som tilsier at resultatene bør tolkes med en viss
+varsomhet. Resultatene understøtter dermed antakelsen om at sammenhenger
+mellom boligmarked og flytteprosesser varierer systematisk med
+kommunenes funksjonelle rolle i det regionale systemet.
+
 # 4.Sammenhengen mellom befolkning og sysselsetting
 
 ```{r}
@@ -1913,3 +2186,4 @@ summary(m_7FE)
 
 \listoffigures
 \listoftables
+
