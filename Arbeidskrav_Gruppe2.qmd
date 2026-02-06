@@ -64,6 +64,7 @@ library(lubridate)
 library(flextable)
 library(dplyr)
 library(janitor)
+library(fixest)
 options(
   paged.print = FALSE,
   scipen = 999
@@ -400,8 +401,9 @@ ble slått sammen for å spare på administrative utgifter, og det er
 derfor vi ser størst hopp i folketall i de tre minst sentrale
 kommunekategoriene i denne perioden. Den svake oppgangen i tiden etter
 er interessant. Kan det være normalisering av hjemmekontor og økt fokus
-på distriktsutvikling som driver denne desentraliseringen? \### Andel
-innbyggere 20-29 år etter sentralitetskategori
+på distriktsutvikling som driver denne desentraliseringen?\
+
+### Andel innbyggere 20-29 år etter sentralitetskategori
 
 ```{r, warning=FALSE, message=FALSE}
 # Merge aldersdata med sentralitetsdata
