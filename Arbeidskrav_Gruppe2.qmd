@@ -181,7 +181,7 @@ Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som
 ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å
 starte. I Norge publiserer både NAV og Statistik sentralbyrå (SSB) tall
 for arbeidsledighet, men bruker ulike metoder når det kommer til å samle
-inn data. **Kilde: https://arbeidsledighet.no/sporsmal-og-svar/**
+inn data. [@erikherstadhorgen2025]
 
 NAVs tall omfatter personer som er registrert som helt ledigh hos NAV.
 Dette er en fulltelling av alle som faktisk har meldt seg som
@@ -199,8 +199,7 @@ ledighetstall enn NAV.
 NAVs tall gir derimot et bedre bilde av hvor mange som faktisk mottat og
 har behov for oppføring fra et statlig organ, mens SSBs tall gir et
 bredere og mer helhetlig bilde av arbeidsledigheten i befolkningen som
-helhet. **Kilde:
-https://www.ssb.no/arbeid-og-lonn/sysselsetting/artikler/hvorfor-ulike-arbeidsledighetstall**
+helhet. [@statistisksentralbyrå2025]
 
 ```{r}
 #Leser av excel-filene
@@ -2186,4 +2185,3 @@ summary(m_7FE)
 
 \listoffigures
 \listoftables
-
