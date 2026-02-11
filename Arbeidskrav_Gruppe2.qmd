@@ -231,8 +231,7 @@ analysene.
 ## Gjennomsnittlig kvadratmeterpris for bolig
 
 Boligpriser benyttes som mål på etterspørsel og attraktivitet i
-regionale boligmarkeder. Variabelen inngår i kart, tidsserier og
-regresjonsanalyser.
+regionale boligmarkeder. Prisene sier også noe om tilbudet i regionale boligmarkeder. Variabelen inngår i kart, tidsserier og regresjonsanalyser.
 
 ## Utdanningsnivå
 
