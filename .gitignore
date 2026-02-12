@@ -6,6 +6,7 @@
 *.pptx
 *.reavealjs
 *.pdf
+*.gpkg
 
 # History files
 .Rhistory
