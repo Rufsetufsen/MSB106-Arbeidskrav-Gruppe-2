@@ -833,10 +833,12 @@ andel_20_29 <- demografi_total %>%
 
 # Sentralitet: lag langt format (kommunenummer, år, indeks)
 sent_long <- Sentralitet %>%
+  rename(indeks_2018 = 'Sentralitetsindeks 2018') |>
   clean_names() %>%
-  select(kommunenummer, indeks_2020, indeks_2023) %>%
+  select(kommunenummer, indeks_2018, indeks_2020, indeks_2023) %>%
   std_k(kommunenummer) %>%
   summarise(
+    indeks_2018 = if (all(is.na(indeks_2018))) NA_real_ else max(indeks_2018, na.rm = TRUE),
     indeks_2020 = if (all(is.na(indeks_2020))) NA_real_ else max(indeks_2020, na.rm = TRUE),
     indeks_2023 = if (all(is.na(indeks_2023))) NA_real_ else max(indeks_2023, na.rm = TRUE),
     .by = kommunenummer
