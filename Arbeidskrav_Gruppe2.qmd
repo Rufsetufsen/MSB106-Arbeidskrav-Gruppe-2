@@ -268,7 +268,7 @@ forholdsvis høy befolkningsvekts, for eksempel Gjerdrum, Nannestad og
 Eidsvoll. Ullensaker har hatt høyest vekst i landet. Kystområdene sør i
 landet har generelt sett hatt høyere vekst enn innlandet og Nord-Norge.
 De kommunene med lavest vekst ligger for det meste i Trøndelag og lengre
-nord i landet.
+nord i landet. Det at hele landet har hatt en vekst i befolkning kan tyde på at det har vært en del innvandring, eller en økning i samlet fruktbarhet. Samlet fruktbarhet er ett mål på gjennomsnittlig mengde barn kvinner vil få i løpet av livet (https://www.ssb.no/befolkning/fodte-og-dode/statistikk/fodte/artikler/fruktbarheten-gar-opp).  
 
 ### Andel befolkning i alder 20-29
 
@@ -297,7 +297,7 @@ arbeidsledighet er i Finnmark, men man kan finne en uteligger i
 Nordland. Det er også mer arbeidsledighet i området rundt og i Akershus
 enn vest i landet. Arbeidsledighet er størst i urbane områder, og lavest
 i rurale. Dette kan komme av “amenities”, eller “lokale goder”, som gjør
-at det er mer ettertraktet å være boende i urbane områder. Videre i
+at det er mer ettertraktet å være boende i urbane områder. For eksempel kan det være mer ettertraktet å bo en plass med muligheter for permanent høyere inntekt. Personer vil prioritere å bo urbant, dersom man kan tjene vesentlig mer enn i rurale områder, selv om det er vanskelig å få seg en jobb (Todaro, s. 147 https://www-jstor-org.galanga.hvl.no/stable/1811100?seq=10). Videre i
 @fig-SysselVekst kan man se prosentvis sysselsettingsvekst etter år
 2000, til 2024. Her kan man se at det har både vært negativ og positiv
 vekt i landet. Igjen kommer kystområdene i Sør-Norge, samt områdene
