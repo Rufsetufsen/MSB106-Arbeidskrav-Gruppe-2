@@ -313,7 +313,7 @@ vekt i landet. Igjen kommer kystområdene i Sør-Norge, samt områdene
 rundt og i Oslo godt ut, og har en høy klasse vekst. Innlandet og
 nordover i landet har en del negativ vekst. Hamarøy skiller seg spesielt
 ut og har klasse 10 vekst, selv om nabo kommunene har svak eller negativ
-vekst.
+vekst. Kartet tyder på at det er mer vekst i sysselsetting i urbane enn rurale områder, noe som kan komme av en økning av urbanisering i form av nye bedrifter og dermed arbeidsplasser. 
 
 ### Andel med universitetsutdanning
 
