@@ -373,52 +373,59 @@ bef_merged <- bef %>%
   left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
             by = c("kommunenummer" = "knr"))
 
-# Gjennomsnittlig folketall per sentralitetsklasse - med facets (for lesbarhet)
+# Gjennomsnittlig folketall per sentralitetsklasse
 bef_snitt <- bef_merged %>%
-  filter(år > 2000) %>%
-  filter(!is.na(`Klasse 2023`)) %>%  # Manglende parentes her
-  mutate(år = as.numeric(as.character(år))) %>%  # Konverter år til numerisk
+  filter(år >= 2000) %>%  # >= for å inkludere 2000
+  filter(!is.na(`Klasse 2023`)) %>%
+  mutate(år = as.numeric(as.character(år))) %>%
   group_by(år, `Klasse 2023`) %>%
   summarise(gjsnitt_folketall = mean(beftot, na.rm = TRUE),
             .groups = "drop")
 
-ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
-  geom_line(linewidth = 1, color = "steelblue") +
-  geom_point(size = 2, color = "steelblue") +
-  facet_wrap(~ `Klasse 2023`, 
-             scales = "free_y",
-             labeller = labeller(`Klasse 2023` = c(  # Manglende parentes her
-               "1" = "Klasse 1 (mest sentral)",
-               "2" = "Klasse 2",
-               "3" = "Klasse 3",
-               "4" = "Klasse 4",
-               "5" = "Klasse 5",
-               "6" = "Klasse 6 (minst sentral)"
-             ))) +
+# Beregne indeks med 2000 = 100
+bef_indeks <- bef_snitt %>%
+  group_by(`Klasse 2023`) %>%
+  mutate(basisår_verdi = gjsnitt_folketall[år == 2000],
+         indeks = (gjsnitt_folketall / basisår_verdi) * 100) %>%
+  ungroup()
+
+# Alle klasser i samme graf med indeks
+ggplot(bef_indeks, aes(x = år, y = indeks, 
+                       color = factor(`Klasse 2023`),
+                       group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 100, linetype = "dashed", color = "gray50") +
   scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
   labs(title = "Folketallsutvikling etter sentralitetskategori",
-       subtitle = "Gjennomsnittlig folketall per kommune, 2001-",
+       subtitle = "Indeksert utvikling per kommune (2000 = 100)",
        x = "År",
-       y = "Gjennomsnittlig folketall") +
+       y = "Indeks (2000 = 100)") +
   theme_minimal() +
-  theme(strip.text = element_text(face = "bold"),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(legend.position = "right")
 ```
 
-Folketallsutviklingen ser ut til å være lignende for de tre mest
-sentrale sentralitetskategoriene. I klasse 4 ser vi en lignende, dog
-svakere utvikling med et betraktelig hopp i folketall fra 2019 til 2020.
-I klasse 5 var det befolkningsnedgang fra år 2000, før det snudde til
-positiv utvikling rundt år 2007. Denne utviklingen snudde til det
-negative igjen rundt 2016, før vi igjen ser et hopp i år 2020. De aller
-minst sentrale kommunene har konsekvent hatt befolkningsnedgang siden
-2000, foruten et hopp i 2020 og en mild oppgang de siste 2-3 årene.
-Hoppet i 2020 skyldes kommunereformen. De minste kommunene (i folketall)
-ble slått sammen for å spare på administrative utgifter, og det er
-derfor vi ser størst hopp i folketall i de tre minst sentrale
-kommunekategoriene i denne perioden. Den svake oppgangen i tiden etter
-er interessant. Kan det være normalisering av hjemmekontor og økt fokus
-på distriktsutvikling som driver denne desentraliseringen?\
+I figuren over ser vi gjennomsnittlig folketallsutvikling i de ulike
+sentralitetsklassene, indeksert for å vise prosentvis utvikling.
+Startåret på grafen er år 2000.
+
+Folketallsutviklingen har vært stigende for de fire mest sentrale
+sentralitetskategoriene. I klasse 4 ser vi også et betraktelig hopp i
+folketall fra 2019 til 2020. I klasse 5 var det befolkningsnedgang fra
+år 2000, før det snudde til positiv utvikling rundt år 2007. Denne
+utviklingen snudde til det negative igjen rundt 2016, før vi igjen ser
+et hopp i år 2020. De aller minst sentrale kommunene har konsekvent hatt
+befolkningsnedgang siden 2000, foruten et hopp i 2020 og en mild oppgang
+de siste 2-3 årene. Hoppene i 2020 må antas å skyldes kommunereformen.
+De minste kommunene (i folketall) ble her slått sammen for å spare på
+administrative utgifter, og det er derfor vi ser størst hopp i folketall
+i klasse 4 og 6 i denne perioden. Kommunereformen ser også ut til å hatt
+en lignende effekt på klasse 5, men noe stort hopp i folketall ser vi
+ikke før i 2024. Den svake oppgangen i tiden etter er også interessant.
+Kan det være normalisering av hjemmekontor og økt fokus på
+distriktsutvikling som driver denne desentraliseringen?
 
 ### Andel innbyggere 20-29 år etter sentralitetskategori
 
@@ -2219,3 +2226,4 @@ summary(m_7FE)
 
 \listoffigures
 \listoftables
+
