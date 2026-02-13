@@ -523,14 +523,15 @@ ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet,
 ```
 
 I figuren over ser vi en grafisk framstilling av gjennomsnittlig
-arbeidsledighet (i prosent) i hver sentralitetskategori.
-Arbeidsledigheten ser ut til å være relativt lik over hele landet, med
-mindre enn ett prosentpoeng variasjon frem til 2020. I koronaåret 2020
-ser vi en eksplosjon i ledighet for alle klassene, men med størst økning
-i sentrale strøk. Sjokket fra COVID-19 ser ut til å ha gitt seg i 2022,
-og grafen trender mot likevektsledighet igjen i 2023. Datagrunnlaget
-viser at flere kommuner har oppgitt 0% arbeidsledighet i 2024, og vi
-antar at dette er en feil i statistikken.
+arbeidsledighet (i prosent) i hver sentralitetskategori, beregnet ut fra
+data hentet fra SSB. Arbeidsledigheten ser ut til å være relativt lik
+over hele landet, med mindre enn ett prosentpoeng variasjon frem til
+2020. I koronaåret 2020 ser vi en eksplosjon i ledighet for alle
+klassene, men med størst økning i sentrale strøk. Sjokket fra COVID-19
+ser ut til å ha gitt seg i 2022, og grafen trender mot mer typiske
+verdier igjen i 2023. Datagrunnlaget viser at flere kommuner har oppgitt
+0% arbeidsledighet i 2024, og vi antar at dette er en feil i
+statistikken.
 
 ### Sysselsettingsvekst etter sentralitetskategori
 
@@ -673,6 +674,7 @@ utd_merged <- utdanning %>%
 
 # Beregne gjennomsnittlig andel per sentralitetsklasse per år
 utd_snitt <- utd_merged %>%
+  filter(år >= 1985) %>%  # Filtrer kun data fra 1985 og fremover
   group_by(år, `Klasse 2023`) %>%
   summarise(gjsnitt_andel = mean(utdanand, na.rm = TRUE),
             .groups = "drop")
@@ -683,16 +685,16 @@ ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel,
                        group = `Klasse 2023`)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
-  scale_x_continuous(breaks = seq(1985, 2025, by = 5)) +
+  scale_x_continuous(breaks = seq(1985, 2025, by = 5), 
+                     limits = c(1985, NA)) +  # Setter minimum x-verdi til 1985
   scale_color_discrete(name = "Sentralitetsklasse",
                        labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
   labs(title = "Andel innbyggere med universitetsutdanning etter sentralitetskategori",
-       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1986-",
+       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1985-",
        x = "År",
        y = "Andel med universitetsutdanning (%)") +
   theme_minimal() +
   theme(legend.position = "right")
-
 ```
 
 Utviklingen i andel høyt utdannede innbyggere har vært positiv
@@ -701,7 +703,9 @@ mest sentrale kommunene har også høyest andel høyt utdannede innbyggere.
 Dette kan skyldes at befolkningen i bynære miljø har enklest tilgang til
 universiteter og høyskoler, men det kan også være en indikasjon på at
 det i bykommunene det er best tilgang på arbeid som krever høye
-kvalifikasjoner. \### Utvikling i netto innflytting
+kvalifikasjoner.
+
+### Utvikling i netto innflytting
 
 ```{r, warning=FALSE, message=FALSE}
 flytt_merged <- flytt %>%
@@ -2229,3 +2233,4 @@ summary(m_7FE)
 
 \listoffigures
 \listoftables
+
