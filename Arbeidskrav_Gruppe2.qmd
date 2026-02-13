@@ -268,7 +268,11 @@ forholdsvis høy befolkningsvekts, for eksempel Gjerdrum, Nannestad og
 Eidsvoll. Ullensaker har hatt høyest vekst i landet. Kystområdene sør i
 landet har generelt sett hatt høyere vekst enn innlandet og Nord-Norge.
 De kommunene med lavest vekst ligger for det meste i Trøndelag og lengre
-nord i landet. Det at hele landet har hatt en vekst i befolkning kan tyde på at det har vært en del innvandring, eller en økning i samlet fruktbarhet. Samlet fruktbarhet er ett mål på gjennomsnittlig mengde barn kvinner vil få i løpet av livet (https://www.ssb.no/befolkning/fodte-og-dode/statistikk/fodte/artikler/fruktbarheten-gar-opp).  
+nord i landet. Det at hele landet har hatt en vekst i befolkning kan
+tyde på at det har vært en del innvandring, eller en økning i samlet
+fruktbarhet. Samlet fruktbarhet er ett mål på gjennomsnittlig mengde
+barn kvinner vil få i løpet av livet
+(https://www.ssb.no/befolkning/fodte-og-dode/statistikk/fodte/artikler/fruktbarheten-gar-opp).
 
 ### Andel befolkning i alder 20-29
 
@@ -297,7 +301,12 @@ arbeidsledighet er i Finnmark, men man kan finne en uteligger i
 Nordland. Det er også mer arbeidsledighet i området rundt og i Akershus
 enn vest i landet. Arbeidsledighet er størst i urbane områder, og lavest
 i rurale. Dette kan komme av “amenities”, eller “lokale goder”, som gjør
-at det er mer ettertraktet å være boende i urbane områder. For eksempel kan det være mer ettertraktet å bo en plass med muligheter for permanent høyere inntekt. Personer vil prioritere å bo urbant, dersom man kan tjene vesentlig mer enn i rurale områder, selv om det er vanskelig å få seg en jobb (Todaro, s. 147 https://www-jstor-org.galanga.hvl.no/stable/1811100?seq=10). Videre i
+at det er mer ettertraktet å være boende i urbane områder. For eksempel
+kan det være mer ettertraktet å bo en plass med muligheter for permanent
+høyere inntekt. Personer vil prioritere å bo urbant, dersom man kan
+tjene vesentlig mer enn i rurale områder, selv om det er vanskelig å få
+seg en jobb (Todaro, s. 147
+https://www-jstor-org.galanga.hvl.no/stable/1811100?seq=10). Videre i
 @fig-SysselVekst kan man se prosentvis sysselsettingsvekst etter år
 2000, til 2024. Her kan man se at det har både vært negativ og positiv
 vekt i landet. Igjen kommer kystområdene i Sør-Norge, samt områdene
@@ -434,19 +443,19 @@ distriktsutvikling som driver denne desentraliseringen?
 demo_merged <- demografi_total %>%
   mutate(år = as.numeric(as.character(år))) %>%
   left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
-            by = c("kommunenummer" = "knr"))%>%
+            by = c("kommunenummer" = "knr")) %>%
   filter(!is.na(`Klasse 2023`))
 
 # Beregne totalt folketall per kommune per år (for å regne ut andeler)
 demo_totalt <- demo_merged %>%
-  filter(år > 2000) %>%
+  filter(år >= 2000) %>%
   group_by(kommunenummer, år, `Klasse 2023`) %>%
   summarise(totalt_bef = sum(bef, na.rm = TRUE),
             .groups = "drop")
 
 # Merge tilbake og beregne andeler
 demo_andeler <- demo_merged %>%
-  filter(år > 2000) %>%
+  filter(år >= 2000) %>%
   left_join(demo_totalt, by = c("kommunenummer", "år", "Klasse 2023")) %>%
   mutate(andel = bef / totalt_bef * 100)
 
@@ -457,27 +466,21 @@ demo_snitt_20_29 <- demo_andeler %>%
   summarise(gjsnitt_andel = mean(andel, na.rm = TRUE),
             .groups = "drop")
 
-# Lage graf
-ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
-  geom_line(linewidth = 1, color = "steelblue") +
-  geom_point(size = 2, color = "steelblue") +
-  facet_wrap(~ `Klasse 2023`, 
-             scales = "free_y",
-             labeller = labeller(`Klasse 2023` = c(
-               "1" = "Klasse 1 (mest sentral)",
-               "2" = "Klasse 2",
-               "3" = "Klasse 3",
-               "4" = "Klasse 4",
-               "5" = "Klasse 5",
-               "6" = "Klasse 6 (minst sentral)"
-             ))) +
+# Lage graf - alle klasser i samme plot
+ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel, 
+                              color = factor(`Klasse 2023`),
+                              group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
   scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
   labs(title = "Andel innbyggere 20-29 år etter sentralitetskategori",
        subtitle = "Gjennomsnittlig andel per kommune, 2001-",
        x = "År",
        y = "Andel av befolkningen (%)") +
   theme_minimal() +
-  theme(strip.text = element_text(face = "bold"))
+  theme(legend.position = "right")
 ```
 
 Andel innbyggere i 20-årene ser ut til å følge en noenlunde lik
@@ -2226,4 +2229,3 @@ summary(m_7FE)
 
 \listoffigures
 \listoftables
-
