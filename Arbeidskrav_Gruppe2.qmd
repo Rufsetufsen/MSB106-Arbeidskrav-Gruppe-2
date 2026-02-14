@@ -1784,6 +1784,14 @@ som kontrolleres for når faste effekter inkluderes.
 Sammenlign med resultater for korrelasjonskoeﬀisienter i deloppgaven
 foran:
 
+Regresjonsmodellene gir en mer presis beskrivelse av sammenhengen mellom
+befolkning og sysselsetting enn korrelasjonskoeffisientene i deloppgaven
+foran. Mens korrelasjonskoeffisientene kun måler graden av samvariasjon
+mellom variablene, gir regresjonsmodellene en strukturert analyse der
+sammenhengen estimeres eksplisitt. Dette gjør det mulig å skille mellom
+ulike kilder til variasjon og gir en klarere forståelse av hvordan
+befolkning og sysselsetting henger sammen.
+
 Kan resultatene fra slike regresjonsmodeller i større grad enn
 korrelasjonskoeﬀisienten tolkes kausalt?
 
