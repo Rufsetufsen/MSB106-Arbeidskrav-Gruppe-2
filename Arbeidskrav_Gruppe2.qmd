@@ -596,7 +596,7 @@ ggplot(syss_vekst, aes(x = år, y = vekst_prosent,
   theme(legend.position = "right")
 ```
 
-Figuren over viser sysselsettingsvekts. Vi ser positiv utvikling i de
+Figuren over viser sysselsettingsvekst. Vi ser positiv utvikling i de
 fleste årene, unntatt negativ utvikling i 2009, 2015 og 2020. Dette kan
 ses i forbindelse med internasjonale økonomiske trender. Nedgangen i
 2009 kan forklares som en konsekvens av "the great recession" i 2008.
