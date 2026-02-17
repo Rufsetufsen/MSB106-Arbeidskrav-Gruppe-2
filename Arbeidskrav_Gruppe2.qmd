@@ -496,8 +496,13 @@ ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel,
 Andel innbyggere i 20-årene ser ut til å følge en noenlunde lik
 utvikling nasjonalt, unntatt for sentralitetsklasse 1 og 2 som har hatt
 en svakere nedgang i unge innbyggere enn resten av landet. Dette kan
-stemme overens med antagelsen om at unge mennesker trekkes mot urbane
-miljø.
+skyldes at unge mennesker reagerer bedre på de positive effektene av
+urbanisering, som et bredere kulturtilbud og flere ameniteter [@capello,
+s.187]. En annen hypotese kan være at de i aldersgruppen 20-29 er på det
+livsstadiet at de vil ta høyere utdanning - "learning by schooling" - og
+at de derfor i større grad trekkes mot steder der det finnes
+universiteter, som ofte er lagt til de større, mer sentrale byene
+[@göcke2004].
 
 ### Arbeidsledighet etter sentralitetskategori
 
@@ -2400,4 +2405,3 @@ på kommunenivå.
 
 \listoffigures
 \listoftables
-
