@@ -2003,17 +2003,18 @@ m_6A <- lm(
   data = df_6_csA
 )
 summary(m_6A)
-
-# Denne modellen er en start-år-modell
-# start_år angir det tidligste året med komplette forklaringsvariabler for hver kommune
-# end_år angir det siste året med tilgjengelige folketall
-# Den avhengige variabelen er kommunens samlede prosentvise folketallsvekst over hele observasjonsperioden
-# Alle forklaringsvariabler er målt i startåret
-# Sentralitet er representert ved verdien i 2023 som et tilnærmet tidsinvariant strukturelt mål
-# Øst fungerer som referansekategori for landsdel
-# Koeffisientene for øvrige landsdeler viser gjennomsnittlige forskjeller relativt til Østlandet,
-# kontrollert for øvrige forklaringsvariabler
 ```
+
+Denne modellen er en start-år-modell startåret angir det tidligste året
+med komplette forklaringsvariabler for hver kommune. Sluttåret angir det
+siste året med tilgjengelige folketall. Den avhengige variabelen er
+kommunens samlede prosentvise folketallsvekst over hele
+observasjonsperioden. Alle forklaringsvariabler er målt i startåret.
+Sentralitet er representert med verdien i 2023 som et tilnærmet
+tidsinvariant strukturelt mål. Øst fungerer som referansekategori for
+landsdel. Koeffisientene for øvrige landsdeler viser gjennomsnittlige
+forskjeller relativt til Østlandet, kontrollert for øvrige
+forklaringsvariabler.
 
 ### Periode-gjennomsnitt-modell
 
@@ -2055,13 +2056,17 @@ m_6B <- lm(
   data = df_6_csB
 )
 summary(m_6B)
-
-# Den avhengige variabelen er kommunens samlede prosentvise folketallsvekst, identisk definert som i modell A.
-# Forklaringsvariablene er definert som gjennomsnitt over perioden fra start_år til end_år, og reflekterer langsiktige strukturelle forhold.
-# Sentralitet er representert ved verdien i 2023 og er konstant over perioden, slik at periodegjennomsnittet tilsvarer denne faste verdien.
-# Denne modellformuleringen kan tolkes som en sammenheng mellom kommunens gjennomsnittlige kjennetegn og langsiktig befolkningsutvikling, men gir ikke grunnlag for kausale tolkninger.
-
 ```
+
+Den avhengige variabelen er kommunens samlede prosentvise
+folketallsvekst, identisk definert som i Start-år-modellen.
+Forklaringsvariablene er definert som gjennomsnitt over perioden fra
+startåret til sluttåret, og reflekterer langsiktige strukturelle
+forhold. Sentralitet er representert med verdien i 2023 og er konstant
+over perioden, slik at periodegjennomsnittet tilsvarer denne faste
+verdien. Denne modellformuleringen kan tolkes som en sammenheng mellom
+kommunens gjennomsnittlige kjennetegn og langsiktig
+befolkningsutvikling, men gir ikke grunnlag for kausale tolkninger.
 
 ### FE-modell
 
@@ -2115,13 +2120,20 @@ m_6FE <- feols(
   cluster = ~ kommunenummer
 )
 summary(m_6FE)
-
-# FE-modellen utnytter kun variasjon innen samme kommune over tid og identifiserer hvordan årlige endringer i forklaringsvariablene samvarierer med årlig befolkningsvekst.
-# Tidsinvariante forhold som sentralitet og landsdel fanges opp av kommune-faste effekter og kan derfor ikke estimeres eksplisitt.
-# Sammenlignet med tverrsnittsmodellene (modell A og B) mister flere variabler statistisk signifikans i FE-modellen. Dette er forventet og reflekterer at FE-modellen kontrollerer for uobserverte, tid-invariante forskjeller mellom kommuner.
-# Netto utflytting per 1000 innbyggere har en negativ og signifikant sammenheng med årlig befolkningsvekst innen samme kommune.
-# Andel 20–29 år har en positiv og signifikant sammenheng med årlig befolkningsvekst innen kommuner.
 ```
+
+FE-modellen utnytter kun variasjon innen samme kommune over tid og
+identifiserer hvordan årlige endringer i forklaringsvariablene
+samvarierer med årlig befolkningsvekst. Tidsinvariante forhold som
+sentralitet og landsdel fanges opp av kommune-faste effekter og kan
+derfor ikke estimeres eksplisitt. Sammenlignet med tverrsnittsmodellene
+(start-år-modell og periode-gjennomsnitt-modellen) mister flere
+variabler statistisk signifikans i FE-modellen. Dette er forventet og
+reflekterer at FE-modellen kontrollerer for uobserverte, tid-invariante
+forskjeller mellom kommuner. Netto utflytting per 1000 innbyggere har en
+negativ og signifikant sammenheng med årlig befolkningsvekst innen samme
+kommune. Andel 20–29 år har en positiv og signifikant sammenheng med
+årlig befolkningsvekst innen kommuner.
 
 ## En multippel regresjonsmodell for sysselsettingsvekst
 
@@ -2188,14 +2200,14 @@ m_7A <- lm(
 )
 
 summary(m_7A)
-
-# Dette er en tverrsnittmodell der sysselsettingsvekst over hele perioden er avhengig variabel.
-# Forklaringsvariablene (unntatt folketallsvekst) måles i startåret.
-# Folketallsvekst inkluderes som egen forklaringsvariabel (vekstrate over hele perioden).
-# Sentralitet er representert ved 2023-verdien (tilnærmet tidsinvariant).
-# Øst er referansekategori for landsdel (via factor(landsdel)).
-
 ```
+
+Dette er en tverrsnittmodell der sysselsettingsvekst over hele perioden
+er avhengig variabel. Forklaringsvariablene (unntatt folketallsvekst)
+måles i startåret. Folketallsvekst inkluderes som egen
+forklaringsvariabel (vekstrate over hele perioden). Sentralitet er
+representert med 2023-verdien (tilnærmet tidsinvariant). Øst er
+referansekategori for landsdel.
 
 ### Periode-gjennomsnitt-modell
 
@@ -2263,14 +2275,13 @@ m_7B <- lm(
 )
 
 summary(m_7B)
-
-
-# Modell B bruker periodegjennomsnitt av forklaringsvariabler (start_år–end_år).
-# Sysselsettingsvekst er samlet vekst fra start_år til end_år.
-# Folketallsvekst inkluderes som egen forklaringsvariabel (samme periode).
-# Sentralitet er i praksis tidsinvariant (fast 2023-verdi), og gjennomsnittet tilsvarer denne.
-
 ```
+
+Periode-gjennomsnitt-modellen bruker periodegjennomsnitt av
+forklaringsvariabler (startår-sluttår). Sysselsettingsvekst er samlet
+vekst fra startåret til sluttåret. Folketallsvekst inkluderes som egen
+forklaringsvariabel (samme periode). Sentralitet er i praksis
+tidsinvariant (fast 2023-verdi), og gjennomsnittet tilsvarer dette.
 
 ### FE-modell
 
@@ -2317,14 +2328,15 @@ m_7FE <- feols(
   cluster = ~ kommunenummer
 )
 summary(m_7FE)
-
-# Avhengig variabel er årlig sysselsettingsvekst, målt som log-differanse i sysselsetting.
-# I tråd med oppgaveteksten inngår befolkningsutvikling som forklaringsvariabel, representert ved årlig log-differanse i folketall.
-# Modellen inkluderer kommune- og årsfaste effekter og utnytter kun variasjon innen samme kommune over tid.
-# Tidsinvariante forhold som sentralitet og landsdel fanges dermed opp av kommune-faste effekter.
-# Standardfeil er klustrert på kommunenivå.
-
 ```
+
+Avhengig variabel er årlig sysselsettingsvekst, målt som log-differanse
+i sysselsetting. Befolkningsutvikling inngår som forklaringsvariabel,
+representert ved årlig log-differanse i folketall. Modellen inkluderer
+kommune- og årsfaste effekter og utnytter kun variasjon innen samme
+kommune over tid. Tidsinvariante forhold som sentralitet og landsdel
+fanges dermed opp av kommune-faste effekter. Standardfeil er klustrert
+på kommunenivå.
 
 # Konklusjoner og diskusjon
 
