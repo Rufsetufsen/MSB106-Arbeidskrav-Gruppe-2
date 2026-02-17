@@ -1858,19 +1858,18 @@ cor_bolig_flytt_andersson
 ```
 
 Analysene viser tydelige forskjeller mellom kommuner gruppert etter en
-forenklet typologi inspirert av Andersson et al. (2020). For
-storbykjerner er korrelasjonen mellom boligpriser og nettoflytting klart
-negativ, noe som indikerer at svært høye boligpriser i de største
-bykommunene kan virke begrensende på netto innflytting. For regionale
-sentra, forstads- og omlandskommuner samt perifere distriktskommuner er
-sammenhengen derimot svakt positiv. Dette kan tolkes som at boligpriser
-i disse områdene i større grad reflekterer attraktivitet og
-etterspørsel, uten de samme kapasitetsbegrensningene som i
-storbykjerner. Her er også antall observasjoner for storbykjerner
+forenklet typologi. For storbykjerner er korrelasjonen mellom
+boligpriser og nettoflytting klart negativ, noe som indikerer at svært
+høye boligpriser i de største bykommunene kan virke begrensende på netto
+innflytting. For regionale sentra, forstads- og omlandskommuner samt
+perifere distriktskommuner er sammenhengen derimot svakt positiv. Dette
+kan tolkes som at boligpriser i disse områdene i større grad reflekterer
+attraktivitet og etterspørsel, uten de samme kapasitetsbegrensningene
+som i storbykjerner. Her er også antall observasjoner for storbykjerner
 relativt lavt, noe som tilsier at resultatene bør tolkes med en viss
 varsomhet. Resultatene understøtter dermed antakelsen om at sammenhenger
 mellom boligmarked og flytteprosesser varierer systematisk med
-kommunenes funksjonelle rolle i det regionale systemet.
+kommunenes funksjonelle rolle i det regionale systemet [@andersson2019].
 
 ## Sammenhengen mellom befolkning og sysselsetting
 
