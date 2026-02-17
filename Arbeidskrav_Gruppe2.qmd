@@ -268,7 +268,11 @@ forholdsvis høy befolkningsvekts, for eksempel Gjerdrum, Nannestad og
 Eidsvoll. Ullensaker har hatt høyest vekst i landet. Kystområdene sør i
 landet har generelt sett hatt høyere vekst enn innlandet og Nord-Norge.
 De kommunene med lavest vekst ligger for det meste i Trøndelag og lengre
-nord i landet.
+nord i landet. Det at hele landet har hatt en vekst i befolkning kan
+tyde på at det har vært en del innvandring, eller en økning i samlet
+fruktbarhet. Samlet fruktbarhet er ett mål på gjennomsnittlig mengde
+barn kvinner vil få i løpet av livet
+(https://www.ssb.no/befolkning/fodte-og-dode/statistikk/fodte/artikler/fruktbarheten-gar-opp).
 
 ### Andel befolkning i alder 20-29
 
@@ -297,14 +301,21 @@ arbeidsledighet er i Finnmark, men man kan finne en uteligger i
 Nordland. Det er også mer arbeidsledighet i området rundt og i Akershus
 enn vest i landet. Arbeidsledighet er størst i urbane områder, og lavest
 i rurale. Dette kan komme av “amenities”, eller “lokale goder”, som gjør
-at det er mer ettertraktet å være boende i urbane områder. Videre i
+at det er mer ettertraktet å være boende i urbane områder. For eksempel
+kan det være mer ettertraktet å bo en plass med muligheter for permanent
+høyere inntekt. Personer vil prioritere å bo urbant, dersom man kan
+tjene vesentlig mer enn i rurale områder, selv om det er vanskelig å få
+seg en jobb (Todaro, s. 147
+https://www-jstor-org.galanga.hvl.no/stable/1811100?seq=10). Videre i
 @fig-SysselVekst kan man se prosentvis sysselsettingsvekst etter år
 2000, til 2024. Her kan man se at det har både vært negativ og positiv
 vekt i landet. Igjen kommer kystområdene i Sør-Norge, samt områdene
 rundt og i Oslo godt ut, og har en høy klasse vekst. Innlandet og
 nordover i landet har en del negativ vekst. Hamarøy skiller seg spesielt
 ut og har klasse 10 vekst, selv om nabo kommunene har svak eller negativ
-vekst.
+vekst. Kartet tyder på at det er mer vekst i sysselsetting i urbane enn
+rurale områder, noe som kan komme av en økning av urbanisering i form av
+nye bedrifter og dermed arbeidsplasser.
 
 ### Andel med universitetsutdanning
 
@@ -373,52 +384,59 @@ bef_merged <- bef %>%
   left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
             by = c("kommunenummer" = "knr"))
 
-# Gjennomsnittlig folketall per sentralitetsklasse - med facets (for lesbarhet)
+# Gjennomsnittlig folketall per sentralitetsklasse
 bef_snitt <- bef_merged %>%
-  filter(år > 2000) %>%
-  filter(!is.na(`Klasse 2023`)) %>%  # Manglende parentes her
-  mutate(år = as.numeric(as.character(år))) %>%  # Konverter år til numerisk
+  filter(år >= 2000) %>%  # >= for å inkludere 2000
+  filter(!is.na(`Klasse 2023`)) %>%
+  mutate(år = as.numeric(as.character(år))) %>%
   group_by(år, `Klasse 2023`) %>%
   summarise(gjsnitt_folketall = mean(beftot, na.rm = TRUE),
             .groups = "drop")
 
-ggplot(bef_snitt, aes(x = år, y = gjsnitt_folketall)) +
-  geom_line(linewidth = 1, color = "steelblue") +
-  geom_point(size = 2, color = "steelblue") +
-  facet_wrap(~ `Klasse 2023`, 
-             scales = "free_y",
-             labeller = labeller(`Klasse 2023` = c(  # Manglende parentes her
-               "1" = "Klasse 1 (mest sentral)",
-               "2" = "Klasse 2",
-               "3" = "Klasse 3",
-               "4" = "Klasse 4",
-               "5" = "Klasse 5",
-               "6" = "Klasse 6 (minst sentral)"
-             ))) +
+# Beregne indeks med 2000 = 100
+bef_indeks <- bef_snitt %>%
+  group_by(`Klasse 2023`) %>%
+  mutate(basisår_verdi = gjsnitt_folketall[år == 2000],
+         indeks = (gjsnitt_folketall / basisår_verdi) * 100) %>%
+  ungroup()
+
+# Alle klasser i samme graf med indeks
+ggplot(bef_indeks, aes(x = år, y = indeks, 
+                       color = factor(`Klasse 2023`),
+                       group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 100, linetype = "dashed", color = "gray50") +
   scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
   labs(title = "Folketallsutvikling etter sentralitetskategori",
-       subtitle = "Gjennomsnittlig folketall per kommune, 2001-",
+       subtitle = "Indeksert utvikling per kommune (2000 = 100)",
        x = "År",
-       y = "Gjennomsnittlig folketall") +
+       y = "Indeks (2000 = 100)") +
   theme_minimal() +
-  theme(strip.text = element_text(face = "bold"),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(legend.position = "right")
 ```
 
-Folketallsutviklingen ser ut til å være lignende for de tre mest
-sentrale sentralitetskategoriene. I klasse 4 ser vi en lignende, dog
-svakere utvikling med et betraktelig hopp i folketall fra 2019 til 2020.
-I klasse 5 var det befolkningsnedgang fra år 2000, før det snudde til
-positiv utvikling rundt år 2007. Denne utviklingen snudde til det
-negative igjen rundt 2016, før vi igjen ser et hopp i år 2020. De aller
-minst sentrale kommunene har konsekvent hatt befolkningsnedgang siden
-2000, foruten et hopp i 2020 og en mild oppgang de siste 2-3 årene.
-Hoppet i 2020 skyldes kommunereformen. De minste kommunene (i folketall)
-ble slått sammen for å spare på administrative utgifter, og det er
-derfor vi ser størst hopp i folketall i de tre minst sentrale
-kommunekategoriene i denne perioden. Den svake oppgangen i tiden etter
-er interessant. Kan det være normalisering av hjemmekontor og økt fokus
-på distriktsutvikling som driver denne desentraliseringen?\
+I figuren over ser vi gjennomsnittlig folketallsutvikling i de ulike
+sentralitetsklassene, indeksert for å vise prosentvis utvikling.
+Startåret på grafen er år 2000.
+
+Folketallsutviklingen har vært stigende for de fire mest sentrale
+sentralitetskategoriene. I klasse 4 ser vi også et betraktelig hopp i
+folketall fra 2019 til 2020. I klasse 5 var det befolkningsnedgang fra
+år 2000, før det snudde til positiv utvikling rundt år 2007. Denne
+utviklingen snudde til det negative igjen rundt 2016, før vi igjen ser
+et hopp i år 2020. De aller minst sentrale kommunene har konsekvent hatt
+befolkningsnedgang siden 2000, foruten et hopp i 2020 og en mild oppgang
+de siste 2-3 årene. Hoppene i 2020 må antas å skyldes kommunereformen.
+De minste kommunene (i folketall) ble her slått sammen for å spare på
+administrative utgifter, og det er derfor vi ser størst hopp i folketall
+i klasse 4 og 6 i denne perioden. Kommunereformen ser også ut til å hatt
+en lignende effekt på klasse 5, men noe stort hopp i folketall ser vi
+ikke før i 2024. Den svake oppgangen i tiden etter er også interessant.
+Kan det være normalisering av hjemmekontor og økt fokus på
+distriktsutvikling som driver denne desentraliseringen?
 
 ### Andel innbyggere 20-29 år etter sentralitetskategori
 
@@ -427,19 +445,19 @@ på distriktsutvikling som driver denne desentraliseringen?\
 demo_merged <- demografi_total %>%
   mutate(år = as.numeric(as.character(år))) %>%
   left_join(Sentralitet %>% select(knr, `Klasse 2023`), 
-            by = c("kommunenummer" = "knr"))%>%
+            by = c("kommunenummer" = "knr")) %>%
   filter(!is.na(`Klasse 2023`))
 
 # Beregne totalt folketall per kommune per år (for å regne ut andeler)
 demo_totalt <- demo_merged %>%
-  filter(år > 2000) %>%
+  filter(år >= 2000) %>%
   group_by(kommunenummer, år, `Klasse 2023`) %>%
   summarise(totalt_bef = sum(bef, na.rm = TRUE),
             .groups = "drop")
 
 # Merge tilbake og beregne andeler
 demo_andeler <- demo_merged %>%
-  filter(år > 2000) %>%
+  filter(år >= 2000) %>%
   left_join(demo_totalt, by = c("kommunenummer", "år", "Klasse 2023")) %>%
   mutate(andel = bef / totalt_bef * 100)
 
@@ -450,27 +468,21 @@ demo_snitt_20_29 <- demo_andeler %>%
   summarise(gjsnitt_andel = mean(andel, na.rm = TRUE),
             .groups = "drop")
 
-# Lage graf
-ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel)) +
-  geom_line(linewidth = 1, color = "steelblue") +
-  geom_point(size = 2, color = "steelblue") +
-  facet_wrap(~ `Klasse 2023`, 
-             scales = "free_y",
-             labeller = labeller(`Klasse 2023` = c(
-               "1" = "Klasse 1 (mest sentral)",
-               "2" = "Klasse 2",
-               "3" = "Klasse 3",
-               "4" = "Klasse 4",
-               "5" = "Klasse 5",
-               "6" = "Klasse 6 (minst sentral)"
-             ))) +
+# Lage graf - alle klasser i samme plot
+ggplot(demo_snitt_20_29, aes(x = år, y = gjsnitt_andel, 
+                              color = factor(`Klasse 2023`),
+                              group = `Klasse 2023`)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
   scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  scale_color_discrete(name = "Sentralitetsklasse",
+                       labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
   labs(title = "Andel innbyggere 20-29 år etter sentralitetskategori",
        subtitle = "Gjennomsnittlig andel per kommune, 2001-",
        x = "År",
        y = "Andel av befolkningen (%)") +
   theme_minimal() +
-  theme(strip.text = element_text(face = "bold"))
+  theme(legend.position = "right")
 ```
 
 Andel innbyggere i 20-årene ser ut til å følge en noenlunde lik
@@ -513,14 +525,15 @@ ggplot(aled_snitt, aes(x = år, y = gjsnitt_ledighet,
 ```
 
 I figuren over ser vi en grafisk framstilling av gjennomsnittlig
-arbeidsledighet (i prosent) i hver sentralitetskategori.
-Arbeidsledigheten ser ut til å være relativt lik over hele landet, med
-mindre enn ett prosentpoeng variasjon frem til 2020. I koronaåret 2020
-ser vi en eksplosjon i ledighet for alle klassene, men med størst økning
-i sentrale strøk. Sjokket fra COVID-19 ser ut til å ha gitt seg i 2022,
-og grafen trender mot likevektsledighet igjen i 2023. Datagrunnlaget
-viser at flere kommuner har oppgitt 0% arbeidsledighet i 2024, og vi
-antar at dette er en feil i statistikken.
+arbeidsledighet (i prosent) i hver sentralitetskategori, beregnet ut fra
+data hentet fra SSB. Arbeidsledigheten ser ut til å være relativt lik
+over hele landet, med mindre enn ett prosentpoeng variasjon frem til
+2020. I koronaåret 2020 ser vi en eksplosjon i ledighet for alle
+klassene, men med størst økning i sentrale strøk. Sjokket fra COVID-19
+ser ut til å ha gitt seg i 2022, og grafen trender mot mer typiske
+verdier igjen i 2023. Datagrunnlaget viser at flere kommuner har oppgitt
+0% arbeidsledighet i 2024, og vi antar at dette er en feil i
+statistikken.
 
 ### Sysselsettingsvekst etter sentralitetskategori
 
@@ -663,6 +676,7 @@ utd_merged <- utdanning %>%
 
 # Beregne gjennomsnittlig andel per sentralitetsklasse per år
 utd_snitt <- utd_merged %>%
+  filter(år >= 1985) %>%  # Filtrer kun data fra 1985 og fremover
   group_by(år, `Klasse 2023`) %>%
   summarise(gjsnitt_andel = mean(utdanand, na.rm = TRUE),
             .groups = "drop")
@@ -673,16 +687,16 @@ ggplot(utd_snitt, aes(x = år, y = gjsnitt_andel,
                        group = `Klasse 2023`)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
-  scale_x_continuous(breaks = seq(1985, 2025, by = 5)) +
+  scale_x_continuous(breaks = seq(1985, 2025, by = 5), 
+                     limits = c(1985, NA)) +  # Setter minimum x-verdi til 1985
   scale_color_discrete(name = "Sentralitetsklasse",
                        labels = c("1 (mest sentral)", "2", "3", "4", "5", "6 (minst sentral)")) +
   labs(title = "Andel innbyggere med universitetsutdanning etter sentralitetskategori",
-       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1986-",
+       subtitle = "Gjennomsnittlig andel per kommune (kort + lang), 1985-",
        x = "År",
        y = "Andel med universitetsutdanning (%)") +
   theme_minimal() +
   theme(legend.position = "right")
-
 ```
 
 Utviklingen i andel høyt utdannede innbyggere har vært positiv
@@ -691,7 +705,9 @@ mest sentrale kommunene har også høyest andel høyt utdannede innbyggere.
 Dette kan skyldes at befolkningen i bynære miljø har enklest tilgang til
 universiteter og høyskoler, men det kan også være en indikasjon på at
 det i bykommunene det er best tilgang på arbeid som krever høye
-kvalifikasjoner. \### Utvikling i netto innflytting
+kvalifikasjoner.
+
+### Utvikling i netto innflytting
 
 ```{r, warning=FALSE, message=FALSE}
 flytt_merged <- flytt %>%
@@ -793,6 +809,15 @@ pendleavstand (90 minutter) vektet etter nærhet. Det er dermed logisk at
 det pendles mer inn til de mest sentrale kommunene.
 
 ## Korrelasjoner
+
+Det vil bli tatt en korrelasjons beregning mellom ulike variabler med de
+dataene vi har tilgjengelig fra SSB. Dataene fra året 2014 og året 2023
+vil bli trukket frem for å beregne korrelasjonen mellom de variablene
+for norske kommuner. Sentralitet derimot har vi tilgjengelig data fra
+2018, 2020 og 2023, og det blitt valgt å ta data fra 2018 og vil i de
+beregningene bruke årene 2018 og 2023. På de beregningene som viser
+størst forskjeller eller tall som stikker ut, vil bli kommentert på og
+gitt en mer forklaring på hvorfor vi får det resultatet.
 
 ```{r}
 # Hjelpefunksjoner (standardisering av rensing + generell korrelasjon)
@@ -901,120 +926,120 @@ pendl_std <- pendl %>%
   )
 ```
 
-### Folketall mot andel i aldersgruppen 20-29（2013, 2023）
+Folketall mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_folk_2013_2023 <- andel_20_29 %>%
-  filter(år %in% c(2013, 2023)) %>%
+  filter(år %in% c(2014, 2023)) %>%
   cor_by_year(folketall, andel_20_29)
 cor_folk_2013_2023
 ```
 
-### Sentralitet mot andel i aldersgruppen 20-29（2020, 2023）
+Sentralitet mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_sent_2020_2023 <- andel_20_29 %>%
-  filter(år %in% c(2020, 2023)) %>%
+  filter(år %in% c(2018, 2023)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
   cor_by_year(indeks, andel_20_29)
 cor_sent_2020_2023
 ```
 
-### Sentralitet mot arbeidsledighet（2020, 2023）
+Sentralitet mot arbeidsledighet
 
 ```{r}
 cor_ledig_2020_2023 <- ledig %>%
-  filter(år %in% c(2020, 2023)) %>%
+  filter(år %in% c(2018, 2023)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
   cor_by_year(indeks, ledig)
 cor_ledig_2020_2023
 ```
 
-### Sentralitet mot enebolig kvm.pris（2020, 2023）
+Sentralitet mot enebolig kvm.pris
 
 ```{r}
 cor_bolig_2020_2023 <- kvpris_ene %>%
-  filter(år %in% c(2020, 2023)) %>%
+  filter(år %in% c(2018, 2023)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
   cor_by_year(indeks, kvpris)
 cor_bolig_2020_2023
 ```
 
-### Sentralitet mot andel med høyere utdanning（2020, 2023）
+Sentralitet mot andel med høyere utdanning
 
 ```{r}
 cor_utd_2020_2023 <- andel_hoyere %>%
-  filter(år %in% c(2020, 2023)) %>%
+  filter(år %in% c(2018, 2023)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
   cor_by_year(indeks, andel_hoyere)
 cor_utd_2020_2023
 ```
 
-### Sentralitet mot utflytting（2020, 2023）
+Sentralitet mot utflytting
 
 ```{r}
 cor_utflytt_2020_2023 <- flytt_std %>%
-  filter(år %in% c(2020, 2023)) %>%
+  filter(år %in% c(2018, 2023)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
   cor_by_year(indeks, utflytt_per1000)
 cor_utflytt_2020_2023
 ```
 
-### Sentralitet mot innpendling（2020, 2023）
+Sentralitet mot innpendling
 
 ```{r}
 cor_innpend_2020_2023 <- pendl_std %>%
-  filter(år %in% c(2020, 2023), !is.na(Innpendlere)) %>%
+  filter(år %in% c(2018, 2023), !is.na(Innpendlere)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
   cor_by_year(indeks, Innpendlere)
 cor_innpend_2020_2023
 ```
 
-### Sentralitet mot utpendling（2020, 2023）
+Sentralitet mot utpendling
 
 ```{r}
 cor_utpend_2020_2023 <- pendl_std %>%
-  filter(år %in% c(2020, 2023), !is.na(Utpendlere)) %>%
+  filter(år %in% c(2018, 2023), !is.na(Utpendlere)) %>%
   left_join(sent_long, by = c("kommunenummer", "år")) %>%
   cor_by_year(indeks, Utpendlere)
 cor_utpend_2020_2023
 ```
 
-### Ledig mot andel i aldersgruppen 20-29（2013, 2023）
+Ledig mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_ledig_andel20_29_2013_2023 <- andel_20_29 %>%
-  filter(år %in% c(2013, 2023)) %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(ledig, by = c("kommunenummer", "år")) %>%
   cor_by_year(ledig, andel_20_29)
 cor_ledig_andel20_29_2013_2023
 ```
 
-### Ledig mot enebolig kvm.pris（2013, 2023）
+Ledig mot enebolig kvm.pris
 
 ```{r}
 cor_ledig_bolig_2013_2023 <- kvpris_ene %>%
-  filter(år %in% c(2013, 2023)) %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(ledig, by = c("kommunenummer", "år")) %>%
   cor_by_year(ledig, kvpris)
 cor_ledig_bolig_2013_2023
 ```
 
-### Ledig mot andel med høyere utdanning（2013, 2023）
+Ledig vs andel med høyere utdanning
 
 ```{r}
 cor_ledig_utd_2013_2023 <- andel_hoyere %>%
-  filter(år %in% c(2013, 2023)) %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(ledig, by = c("kommunenummer", "år")) %>%
   cor_by_year(ledig, andel_hoyere)
 cor_ledig_utd_2013_2023
 ```
 
-### Ledig mot utflytting（2013, 2023）
+Ledig mot utflytting per 1000
 
 ```{r}
 cor_ledig_flytt_2013_2023 <- flytt_std %>%
-  filter(år %in% c(2013, 2023)) %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(ledig, by = c("kommunenummer", "år")) %>%
   mutate(
     utflytt_per1000     = if_else(is.finite(utflytt_per1000), utflytt_per1000, NA_real_),
@@ -1033,7 +1058,7 @@ cor_ledig_flytt_2013_2023
 
 ```
 
-### Ledig mot pendling（2013, 2023）
+Ledig mot pendling per 1000
 
 ```{r}
 cor_ledig_utpend_2013_2023 <- pendl_std %>%
@@ -1049,7 +1074,7 @@ cor_ledig_utpend_2013_2023 <- pendl_std %>%
 cor_ledig_utpend_2013_2023
 ```
 
-### Bolig kvm.pris mot andel med høyere utdanning（2013, 2023）
+Bolig kvm.pris mot andel med høyere utdanning
 
 ```{r}
 cor_bolig_utd_2013_2023 <- kvpris_ene %>%
@@ -1059,7 +1084,7 @@ cor_bolig_utd_2013_2023 <- kvpris_ene %>%
 cor_bolig_utd_2013_2023
 ```
 
-### Bolig kvm.pris mot andel i aldersgruppen 20-29（2013, 2023）
+Bolig kvm.pris mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_bolig_andel20_29_2013_2023 <- kvpris_ene %>%
@@ -1069,7 +1094,7 @@ cor_bolig_andel20_29_2013_2023 <- kvpris_ene %>%
 cor_bolig_andel20_29_2013_2023
 ```
 
-### Bolig kvm.pris mot innpendling（2013, 2023）
+Bolig kvm.pris mot innpendling
 
 ```{r}
 cor_bolig_innpend_2013_2023 <- kvpris_ene %>%
@@ -1080,7 +1105,7 @@ cor_bolig_innpend_2013_2023 <- kvpris_ene %>%
 cor_bolig_innpend_2013_2023
 ```
 
-### Bolig kvmpris mot utpendling（2013, 2023）
+Bolig kvmpris mot utpendling
 
 ```{r}
 cor_bolig_utpend_2013_2023 <- kvpris_ene %>%
@@ -1091,7 +1116,7 @@ cor_bolig_utpend_2013_2023 <- kvpris_ene %>%
 cor_bolig_utpend_2013_2023
 ```
 
-### Bolig kvm.pris mot utflytting（2013, 2023）
+Bolig kvm.pris mot utflytting
 
 ```{r}
 cor_bolig_utflytt_2013_2023 <- kvpris_ene %>%
@@ -1102,7 +1127,7 @@ cor_bolig_utflytt_2013_2023 <- kvpris_ene %>%
 cor_bolig_utflytt_2013_2023
 ```
 
-### Bolig kvm.pris mot innflytting（2013, 2023）
+Bolig kvm.pris mot innflytting
 
 ```{r}
 cor_bolig_innflytt_2013_2023 <- kvpris_ene %>%
@@ -1113,7 +1138,7 @@ cor_bolig_innflytt_2013_2023 <- kvpris_ene %>%
 cor_bolig_innflytt_2013_2023
 ```
 
-### Nettoflytting mot andel i aldersgruppen 20-29（2013, 2023）
+Nettoflytting mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_nettoflytt_andel20_29_2013_2023 <- flytt_std %>%
@@ -1123,7 +1148,7 @@ cor_nettoflytt_andel20_29_2013_2023 <- flytt_std %>%
 cor_nettoflytt_andel20_29_2013_2023
 ```
 
-### Nettoflytting mot netto utpendling (2013, 2023）
+Nettoflytting mot netto utpendling
 
 ```{r}
 cor_nettoflytt_netto_utpend_2013_2023 <- flytt_std %>%
@@ -1135,7 +1160,7 @@ cor_nettoflytt_netto_utpend_2013_2023
 
 ```
 
-### Netto utpendling og bolig kvm.pris i tilgrensende kommuner
+Netto utpendling og bolig kvm.pris i tilgrensende kommuner
 
 ```{r}
 dsn <- "WFS:https://wfs.geonorge.no/skwms1/wfs.inspire-au?service=WFS"
@@ -1187,7 +1212,7 @@ cor_netto_utpend_nabo_kvpris_2013_2023
 
 ```
 
-## Paneldata
+## Paneldata SKRIV EN FORKLARING PÅ HVER PANEL
 
 ### Årlig endring i folketall og sysselsetting
 
@@ -1734,15 +1759,6 @@ modelsummary(
 
 ```
 
-I den pooled regresjonen er sysselsetting den avhengige variabelen og
-befolkning forklaringsvariabelen. Modellen skiller ikke mellom kommuner
-og år, men behandler alle kommune-år-observasjoner samlet. Estimatet
-utnytter derfor både forskjeller mellom kommuner og endringer innen
-samme kommune over tid for å beskrive sammenhengen mellom befolkning og
-sysselsetting. Koeffisienten på 0,696 innebærer at en økning i
-befolkningen på en person i gjennomsnitt er assosiert med om lag 0,696
-flere sysselsatte.
-
 Når faste effekter for både kommuner og år inkluderes, kontrollerer
 modellen for kommune-spesifikke faktorer som er konstante over tid, samt
 felles nasjonale sjokk i hvert år. I denne spesifikasjonen identifiseres
@@ -1755,6 +1771,14 @@ At koeffisienten i modellen med faste effekter er lavere enn i den
 pooled regresjonen, indikerer at en del av den positive sammenhengen i
 pooled modellen skyldes varige strukturelle forskjeller mellom kommuner
 som kontrolleres for når faste effekter inkluderes.
+
+Regresjonsmodellene gir en mer presis beskrivelse av sammenhengen mellom
+befolkning og sysselsetting enn korrelasjonskoeffisientene i deloppgaven
+foran. Mens korrelasjonskoeffisientene kun måler graden av samvariasjon
+mellom variablene, gir regresjonsmodellene en strukturert analyse der
+sammenhengen estimeres eksplisitt. Dette gjør det mulig å skille mellom
+ulike kilder til variasjon og gir en klarere forståelse av hvordan
+befolkning og sysselsetting henger sammen.
 
 Resultatene fra regresjonsmodellene kan i større grad enn en enkel
 korrelasjonskoeffisient tolkes kausalt. En korrelasjonskoeffisient viser
@@ -2202,3 +2226,4 @@ summary(m_7FE)
 
 \listoffigures
 \listoftables
+
