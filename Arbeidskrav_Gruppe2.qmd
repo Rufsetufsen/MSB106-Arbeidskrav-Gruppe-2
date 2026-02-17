@@ -1,5 +1,6 @@
 ---
-title: "Arbeidskrav i Regional økonomi"
+title: "Sentralitet, sysselsetting og struktur: Der ingen skulle tru at nokon kunne bu."
+subtitle: "En analyse av norske demografiske mønstre fra en regionaløkonomisk vinkling."
 author: "Harald Vika, Henriette Hausken Kjærandsen, Karin Liang, Katinca Beate Valvatne, Kristoffer Tufta"
 institute: "HVL"
 date: last-modified
@@ -174,7 +175,7 @@ sentral), og fordeles så inn i 6 forskjellige sentralitetsklasser,
 basert på kommunens sentralitetsverdi.
 
 Endringer fra 2017 -\> 2020 og 2024 skyldes (i følge SSB selv) i stor
-grad endringer i kommunegrensene . I perioden har det vært flere
+grad endringer i kommunegrensene. I perioden har det vært flere
 kommuneoppløsninger/sammenslåinger, og indeksen vil påvirkes ved hver
 slik grensejustering [@høydahl, s. 22]. I 2017 (ved første kalkulering
 av indeksen), ble det også gjort noen feil i databehandlingen som senere
@@ -1768,7 +1769,7 @@ ggplot(
 
 Figuren indikerer en monoton, men ikke-lineær sammenheng, med betydelig
 spredning. Dette tilsier at Spearman-korrelasjonen gir et mer robust mål
-enn Pearson
+enn Pearson.
 
 Korrelasjonskoeffisientene gir kun informasjon om samvariasjon, som er
 et statistiks mål på strken og retningen, men kan ikke helt tolke
