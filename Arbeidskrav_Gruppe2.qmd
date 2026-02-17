@@ -442,9 +442,14 @@ De minste kommunene (i folketall) ble her slått sammen for å spare på
 administrative utgifter, og det er derfor vi ser størst hopp i folketall
 i klasse 4 og 6 i denne perioden. Kommunereformen ser også ut til å hatt
 en lignende effekt på klasse 5, men noe stort hopp i folketall ser vi
-ikke før i 2024. Den svake oppgangen i tiden etter er også interessant.
-Kan det være normalisering av hjemmekontor og økt fokus på
-distriktsutvikling som driver denne desentraliseringen?
+ikke før i 2024. Den (svake) oppgangen i tiden etter er også
+interessant. Kan det være normalisering av hjemmekontor og økt fokus på
+distriktsutvikling som driver denne desentraliseringen? Presser høye
+boligpriser folk ut fra de mest sentrale kommunene? Ønsker folk større
+boliger, noe som er mer tilgjengelig i periferien[@capello,s. 54]? Det
+finnes mange mulige sentrifugale krefter som fungerer desentraliserende
+på befolkningen, men vi har ikke grunnlag til å trekke konklusjoner på
+dette ennå.
 
 ### Andel innbyggere 20-29 år etter sentralitetskategori
 
