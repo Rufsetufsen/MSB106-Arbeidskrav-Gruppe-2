@@ -1813,14 +1813,14 @@ Korrelasjonen mellom boligpriser og nettoflytting er sterkere i store
 byer enn i distriktskommuner, noe som kan indikere at boligmarkedet
 spiller en mer aktiv rolle i flyttebeslutninger i urbane strøk. Videre
 kan en forvente at sammenhengene varierer systematisk mellom ulike typer
-kommuner, slik de er klassifisert hos Andersson et al. (2020). For
-eksempel kan relasjonen mellom sysselsetting, boligpriser og flytting
-være sterkere i funksjonelle byregioner enn i perifere
-distriktskommuner. Dette gir derimot ikke et helt grunnlag for kausale
-tolkninger men kan indikere systematiske samvariasjoner som danner
-utgangspunkt for videre analyser og hypoteser.
+kommuner, slik de er klassifisert hos [@andersson2019]. For eksempel kan
+relasjonen mellom sysselsetting, boligpriser og flytting være sterkere i
+funksjonelle byregioner enn i perifere distriktskommuner. Dette gir
+derimot ikke et helt grunnlag for kausale tolkninger men kan indikere
+systematiske samvariasjoner som danner utgangspunkt for videre analyser
+og hypoteser.
 
-## Forskjeller mellom kommuner i ulike kategorier hos Andersson et al. (2020)
+## Forskjeller mellom kommuner i ulike kategorier hos @andersson2019
 
 ```{r}
 kommune_typologi <- Sentralitet %>%
