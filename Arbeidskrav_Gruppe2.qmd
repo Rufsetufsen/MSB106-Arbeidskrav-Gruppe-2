@@ -116,7 +116,7 @@ load("syssendr0024.rdata")
 
 # Datainnhenting
 
-Denne studien benytter kommunevise paneldata for å analysere
+Dettee studie benytter kommunevise paneldata for å analysere
 sammenhenger mellom sentralitet, demografi, arbeidsmarked, boligmarked
 og flyttemønstre i norske kommuner. Nedenfor gis en kort redegjørelse
 for de enkelte datasettene og deres rolle i de videre deskriptive og
@@ -313,7 +313,9 @@ vekt i landet. Igjen kommer kystområdene i Sør-Norge, samt områdene
 rundt og i Oslo godt ut, og har en høy klasse vekst. Innlandet og
 nordover i landet har en del negativ vekst. Hamarøy skiller seg spesielt
 ut og har klasse 10 vekst, selv om nabo kommunene har svak eller negativ
-vekst. Kartet tyder på at det er mer vekst i sysselsetting i urbane enn rurale områder, noe som kan komme av en økning av urbanisering i form av nye bedrifter og dermed arbeidsplasser. 
+vekst. Kartet tyder på at det er mer vekst i sysselsetting i urbane enn
+rurale områder, noe som kan komme av en økning av urbanisering i form av
+nye bedrifter og dermed arbeidsplasser.
 
 ### Andel med universitetsutdanning
 
@@ -808,6 +810,14 @@ det pendles mer inn til de mest sentrale kommunene.
 
 ## Korrelasjoner
 
+Her vil vi ta for oss beregniner av korrelasjon mellom to variabler fra
+de datasettene vi har hentet fra oppgave 1. Med en korrelasjonsberegning
+vil vi få en korrelasjonskoeffisient, som er et tall mellom -1 og 1, der
+den negative tallet vil bety en negativ korrelasjon og positivt tall
+bety en posetiv korrelasjon mellom variablene. Vi skal altså beregne ut
+sammenhengen mellom to variabler og se hvordan de påvirker hverandre.
+(https://snl.no/korrelasjon)
+
 Det vil bli tatt en korrelasjons beregning mellom ulike variabler med de
 dataene vi har tilgjengelig fra SSB. Dataene fra året 2014 og året 2023
 vil bli trukket frem for å beregne korrelasjonen mellom de variablene
@@ -933,6 +943,12 @@ cor_folk_2013_2023 <- andel_20_29 %>%
 cor_folk_2013_2023
 ```
 
+Korrelasjonsberegningene viser en moderat positiv sammenheng mellom
+kommunestørrelse og andelen unge voksne (20–29 år). Dette indikerer at
+større kommuner relativt sett har en yngre befolkningssammensetning.
+Sammenhengen er noe svakere i 2023 enn i 2014, noe som kan indikere en
+svak reduksjon i graden av aldersselektiv urbanisering
+
 Sentralitet mot andel i aldersgruppen 20-29
 
 ```{r}
@@ -952,6 +968,8 @@ cor_ledig_2020_2023 <- ledig %>%
   cor_by_year(indeks, ledig)
 cor_ledig_2020_2023
 ```
+
+Får lik beregning, noe som kan si at sentraliteten er lite bevegelig.
 
 Sentralitet mot enebolig kvm.pris
 
@@ -1060,7 +1078,7 @@ Ledig mot pendling per 1000
 
 ```{r}
 cor_ledig_utpend_2013_2023 <- pendl_std %>%
-  filter(år %in% c(2013, 2023)) %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(ledig, by = c("kommunenummer", "år")) %>%
   group_by(år) %>%
   summarise(
@@ -1075,86 +1093,86 @@ cor_ledig_utpend_2013_2023
 Bolig kvm.pris mot andel med høyere utdanning
 
 ```{r}
-cor_bolig_utd_2013_2023 <- kvpris_ene %>%
-  filter(år %in% c(2013, 2023)) %>%
+cor_bolig_utd_2014_2023 <- kvpris_ene %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(andel_hoyere, by = c("kommunenummer", "år")) %>%
   cor_by_year(kvpris, andel_hoyere)
-cor_bolig_utd_2013_2023
+cor_bolig_utd_2014_2023
 ```
 
 Bolig kvm.pris mot andel i aldersgruppen 20-29
 
 ```{r}
-cor_bolig_andel20_29_2013_2023 <- kvpris_ene %>%
-  filter(år %in% c(2013, 2023)) %>%
+cor_bolig_andel20_29_2014_2023 <- kvpris_ene %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(andel_20_29, by = c("kommunenummer", "år")) %>%
   cor_by_year(kvpris, andel_20_29)
-cor_bolig_andel20_29_2013_2023
+cor_bolig_andel20_29_2014_2023
 ```
 
 Bolig kvm.pris mot innpendling
 
 ```{r}
-cor_bolig_innpend_2013_2023 <- kvpris_ene %>%
-  filter(år %in% c(2013, 2023)) %>%
+cor_bolig_innpend_2014_2023 <- kvpris_ene %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(pendl_std %>% select(kommunenummer, år, Innpendlere),
             by = c("kommunenummer", "år")) %>%
   cor_by_year(kvpris, Innpendlere)
-cor_bolig_innpend_2013_2023
+cor_bolig_innpend_2014_2023
 ```
 
 Bolig kvmpris mot utpendling
 
 ```{r}
-cor_bolig_utpend_2013_2023 <- kvpris_ene %>%
-  filter(år %in% c(2013, 2023)) %>%
+cor_bolig_utpend_2014_2023 <- kvpris_ene %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(pendl_std %>% select(kommunenummer, år, Utpendlere),
             by = c("kommunenummer", "år")) %>%
   cor_by_year(kvpris, Utpendlere)
-cor_bolig_utpend_2013_2023
+cor_bolig_utpend_2014_2023
 ```
 
 Bolig kvm.pris mot utflytting
 
 ```{r}
-cor_bolig_utflytt_2013_2023 <- kvpris_ene %>%
-  filter(år %in% c(2013, 2023)) %>%
+cor_bolig_utflytt_2014_2023 <- kvpris_ene %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(flytt_std %>% select(kommunenummer, år, utflytt_per1000),
             by = c("kommunenummer", "år")) %>%
   cor_by_year(kvpris, utflytt_per1000)
-cor_bolig_utflytt_2013_2023
+cor_bolig_utflytt_2014_2023
 ```
 
 Bolig kvm.pris mot innflytting
 
 ```{r}
-cor_bolig_innflytt_2013_2023 <- kvpris_ene %>%
-  filter(år %in% c(2013, 2023)) %>%
+cor_bolig_innflytt_2014_2023 <- kvpris_ene %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(flytt_std %>% select(kommunenummer, år, innflytt_per1000),
             by = c("kommunenummer", "år")) %>%
   cor_by_year(kvpris, innflytt_per1000)
-cor_bolig_innflytt_2013_2023
+cor_bolig_innflytt_2014_2023
 ```
 
 Nettoflytting mot andel i aldersgruppen 20-29
 
 ```{r}
-cor_nettoflytt_andel20_29_2013_2023 <- flytt_std %>%
-  filter(år %in% c(2013, 2023)) %>%
+cor_nettoflytt_andel20_29_2014_2023 <- flytt_std %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(andel_20_29, by = c("kommunenummer", "år")) %>%
   cor_by_year(nettoflytt_per1000, andel_20_29)
-cor_nettoflytt_andel20_29_2013_2023
+cor_nettoflytt_andel20_29_2014_2023
 ```
 
 Nettoflytting mot netto utpendling
 
 ```{r}
-cor_nettoflytt_netto_utpend_2013_2023 <- flytt_std %>%
-  filter(år %in% c(2013, 2023)) %>%
+cor_nettoflytt_netto_utpend_2014_2023 <- flytt_std %>%
+  filter(år %in% c(2014, 2023)) %>%
   left_join(pendl_std %>% select(kommunenummer, år, nettopend),
             by = c("kommunenummer", "år")) %>%
   cor_by_year(nettoflytt_per1000, nettopend)
-cor_nettoflytt_netto_utpend_2013_2023
+cor_nettoflytt_netto_utpend_2014_2023
 
 ```
 
@@ -1197,22 +1215,22 @@ kvpris_nabo_mean <- edges_knr %>%
   summarise(kvpris_nabo_mean = mean(kvpris, na.rm = TRUE), .by = c(kommunenummer, år))
 
 # Koble til netto utpendling og beregn korrelasjon
-cor_netto_utpend_nabo_kvpris_2013_2023 <- pendl_std %>%
+cor_netto_utpend_nabo_kvpris_2014_2023 <- pendl_std %>%
   select(kommunenummer, år, nettopend) %>%
   left_join(kvpris_nabo_mean, by = c("kommunenummer", "år")) %>%
-  filter(år %in% c(2013, 2023)) %>%
+  filter(år %in% c(2014, 2023)) %>%
   summarise(
     cor = cor(nettopend, kvpris_nabo_mean, use = "complete.obs"),
     .by = år
   ) %>%
   arrange(år)
-cor_netto_utpend_nabo_kvpris_2013_2023
+cor_netto_utpend_nabo_kvpris_2014_2023
 
 ```
 
-## Paneldata SKRIV EN FORKLARING PÅ HVER PANEL
+## Paneldata
 
-### Årlig endring i folketall og sysselsetting
+Årlig endring i folketall og sysselsetting
 
 ```{r}
 folk_syss_panel <- demografi_total %>%
@@ -1269,7 +1287,17 @@ cor_folk_syss %>%
 
 ```
 
-### Årlig endring i prosentvis arbeidsledighet og årlig prosentvis endring i sysselsetting
+Korrelasjonsberegningene for årlige endringer viser at den
+gjennomsnittlige korrelasjonen mellom befolkningsendringer og
+sysselsettingsendringer er nær null (0.0157). Dette indikerer at den
+sterke positive sammenhengen observert i pooled analyser i stor grad
+reflekterer strukturelle forskjeller mellom kommuner, snarere enn
+kortsiktig samvariasjon innen samme kommune over tid. Når korrelasjonen
+er nærmest lik null, kan en se at variablene nesten ikke har en lineær
+sammenheng med hverandre.
+
+Årlig endring i prosentvis arbeidsledighet og årlig prosentvis endring i
+sysselsetting
 
 ```{r}
 
@@ -1308,11 +1336,29 @@ cor_ledig_syss <- ledig_syss_panel %>%
   )
 
 cor_ledig_syss
+cor_ledig_syss%>%
+  summarise(
+    n_komm = n(),
+    mean = mean(cor_ledig_syss, na.rm = TRUE),
+    median = median(cor_ledig_syss, na.rm = TRUE),
+    sd = sd(cor_ledig_syss, na.rm = TRUE),
+    min = min(cor_ledig_syss, na.rm = TRUE),
+    max = max(cor_ledig_syss, na.rm = TRUE),
+    n_na = sum(is.na(cor_ledig_syss))
+  )
 
 
 ```
 
-### Årlig endring i boligpriser og årlig netto innflytting
+Den gjennomsnittlige korrelasjonen mellom årlig endring i
+arbeidsledighet og årlig prosentvis endring i sysselsetting er -0.303.
+Dette indikerer en moderat negativ sammenheng, der økt sysselsetting
+typisk samvarierer med fallende ledighet. Sammenhengen er relativt
+robust på tvers av kommuner, noe som tyder på at arbeidsmarkedet
+reagerer mer direkte og kortsiktig på sysselsettingsendringer enn det
+befolkningsutviklingen gjør.
+
+Årlig endring i boligpriser og årlig netto innflytting
 
 ```{r}
 
@@ -1357,10 +1403,27 @@ cor_bolig_nettoflytt <- bolig_flytt_diff %>%
   )
 
 cor_bolig_nettoflytt
+cor_bolig_nettoflytt%>%
+  summarise(
+    n_komm = n(),
+    mean = mean(cor_bolig_nettoflytt, na.rm = TRUE),
+    median = median(cor_bolig_nettoflytt, na.rm = TRUE),
+    sd = sd(cor_bolig_nettoflytt, na.rm = TRUE),
+    min = min(cor_bolig_nettoflytt, na.rm = TRUE),
+    max = max(cor_bolig_nettoflytt, na.rm = TRUE),
+    n_na = sum(is.na(cor_bolig_nettoflytt))
+  )
 
 ```
 
-### Årlig prosentvis endring i sysselsetting og årlig endring i boligpriser
+Den gjennomsnittlige korrelasjonen mellom årlige endringer i boligpriser
+og nettoflytting er svak og nær null (0.0637). Samtidig er variasjonen
+mellom kommuner betydelig. Dette indikerer at sammenhengen mellom
+boligmarked og flytteprosesser varierer sterkt mellom ulike typer
+kommuner, og at effektene ikke nødvendigvis opptrer samtidig innen samme
+år.
+
+Årlig prosentvis endring i sysselsetting og årlig endring i boligpriser
 
 ```{r}
 
@@ -1405,10 +1468,27 @@ cor_syss_bolig <- syss_bolig_diff %>%
   )
 
 cor_syss_bolig
+cor_syss_bolig%>%
+  summarise(
+    n_komm = n(),
+    mean = mean(cor_syss_bolig, na.rm = TRUE),
+    median = median(cor_syss_bolig, na.rm = TRUE),
+    sd = sd(cor_syss_bolig, na.rm = TRUE),
+    min = min(cor_syss_bolig, na.rm = TRUE),
+    max = max(cor_syss_bolig, na.rm = TRUE),
+    n_na = sum(is.na(cor_syss_bolig))
+  )
 
 ```
 
-### Årlig endring i innpendling og årlig prosentvis endring i sysselsetting
+Den gjennomsnittlige korrelasjonen mellom årlig sysselsettingsvekst og
+årlig endring i boligpriser er svakt positiv (0.101), men variasjonen
+mellom kommuner er betydelig. Dette indikerer at boligmarkedets respons
+på arbeidsmarkedsendringer varierer systematisk mellom ulike typer
+kommuner, og at andre faktorer enn lokal sysselsettingsvekst spiller en
+viktig rolle for boligprisutviklingen.
+
+Årlig endring i innpendling og årlig prosentvis endring i sysselsetting
 
 ```{r}
 
@@ -1453,8 +1533,26 @@ cor_innpend_syss <- pendl_syss_diff %>%
   )
 
 cor_innpend_syss
+cor_innpend_syss%>%
+  summarise(
+    n_komm = n(),
+    mean = mean(cor_innpend_syss, na.rm = TRUE),
+    median = median(cor_innpend_syss, na.rm = TRUE),
+    sd = sd(cor_innpend_syss, na.rm = TRUE),
+    min = min(cor_innpend_syss, na.rm = TRUE),
+    max = max(cor_innpend_syss, na.rm = TRUE),
+    n_na = sum(is.na(cor_innpend_syss))
+  )
+
 
 ```
+
+Den gjennomsnittlige korrelasjonen mellom årlig sysselsettingsvekst og
+endring i innpendling er høy og positiv (0,72). Dette indikerer at
+økning i antall arbeidsplasser i en kommune i stor grad absorberes
+gjennom økt innpendling. Sammenhengen er konsistent på tvers av kommuner
+og viser at lokale arbeidsmarkeder fungerer som integrerte, funksjonelle
+regioner snarere enn lukkede enheter.
 
 ### Demeaning
 
