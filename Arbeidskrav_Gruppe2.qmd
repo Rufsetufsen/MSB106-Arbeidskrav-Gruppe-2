@@ -2414,7 +2414,13 @@ kommune over tid. Tidsinvariante forhold som sentralitet og landsdel
 fanges dermed opp av kommune-faste effekter. Standardfeil er klustrert
 på kommunenivå.
 
-# Konklusjoner og diskusjon
+# Refleksjon
+
+Noen av metodene som er blitt brukt gir ikke grunnlag for kausale tolkninger i seg selv. Disse resultatene må bli sett sammen med andre undersøkelser for å se om det faktisk finnes en forbindelse mellom ulike variabler. Vi har benyttet oss av flere metoder, som gir oss en innsikt i mulige forbindelser, men vi kunne ha gått enda dypere inn i undersøkelsen og brukt flere metoder for å få en dypere innsikt i forholdene, og om det da finnes endogenitetsutfordringer. Det finnes flere ulike måter for å håndtere mulige endogenitetsutfordringer, noe som https://www-sciencedirect-com.galanga.hvl.no/science/article/pii/S0019850117304133 har samlet i en artikkel. Artikkelen sier for eksempel at man kan bruke instrumentvariabler og benytte seg av høyere orden moment eller generalisert metode av momenter (https://www-sciencedirect-com.galanga.hvl.no/science/article/pii/S0019850117304133). 
+
+Videre i undersøkelsen vår, kunne vi ha delt inn variablene i ulike grupper, for eksempel lav/middels/høy andel pendling, ulike aldersgrupper eller tatt hensyn til kjønn. Da kunne vi ha sett på hvordan forholdene endres dersom vi har hensyn til disse ulike gruppene. Dette hadde vært interessant å se nærmere på til videre forskning. Som tidligere nevnt, kunne det også vært lurt å se på ulike årsaker til at kommuner flest har mer innflytting enn utflytting.  
+
+# Konklusjon
 
 # Litteraturliste
 
