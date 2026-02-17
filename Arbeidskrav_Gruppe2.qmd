@@ -596,7 +596,7 @@ ggplot(syss_vekst, aes(x = år, y = vekst_prosent,
   theme(legend.position = "right")
 ```
 
-Figuren over viser sysselsettingsvekts. Vi ser positiv utvikling i de
+Figuren over viser sysselsettingsvekst. Vi ser positiv utvikling i de
 fleste årene, unntatt negativ utvikling i 2009, 2015 og 2020. Dette kan
 ses i forbindelse med internasjonale økonomiske trender. Nedgangen i
 2009 kan forklares som en konsekvens av "the great recession" i 2008.
@@ -2416,9 +2416,28 @@ på kommunenivå.
 
 # Refleksjon
 
-Noen av metodene som er blitt brukt gir ikke grunnlag for kausale tolkninger i seg selv. Disse resultatene må bli sett sammen med andre undersøkelser for å se om det faktisk finnes en forbindelse mellom ulike variabler. Vi har benyttet oss av flere metoder, som gir oss en innsikt i mulige forbindelser, men vi kunne ha gått enda dypere inn i undersøkelsen og brukt flere metoder for å få en dypere innsikt i forholdene, og om det da finnes endogenitetsutfordringer. Det finnes flere ulike måter for å håndtere mulige endogenitetsutfordringer, noe som https://www-sciencedirect-com.galanga.hvl.no/science/article/pii/S0019850117304133 har samlet i en artikkel. Artikkelen sier for eksempel at man kan bruke instrumentvariabler og benytte seg av høyere orden moment eller generalisert metode av momenter (https://www-sciencedirect-com.galanga.hvl.no/science/article/pii/S0019850117304133). 
+Noen av metodene som er blitt brukt gir ikke grunnlag for kausale
+tolkninger i seg selv. Disse resultatene må bli sett sammen med andre
+undersøkelser for å se om det faktisk finnes en forbindelse mellom ulike
+variabler. Vi har benyttet oss av flere metoder, som gir oss en innsikt
+i mulige forbindelser, men vi kunne ha gått enda dypere inn i
+undersøkelsen og brukt flere metoder for å få en dypere innsikt i
+forholdene, og om det da finnes endogenitetsutfordringer. Det finnes
+flere ulike måter for å håndtere mulige endogenitetsutfordringer, noe
+som
+https://www-sciencedirect-com.galanga.hvl.no/science/article/pii/S0019850117304133
+har samlet i en artikkel. Artikkelen sier for eksempel at man kan bruke
+instrumentvariabler og benytte seg av høyere orden moment eller
+generalisert metode av momenter
+(https://www-sciencedirect-com.galanga.hvl.no/science/article/pii/S0019850117304133).
 
-Videre i undersøkelsen vår, kunne vi ha delt inn variablene i ulike grupper, for eksempel lav/middels/høy andel pendling, ulike aldersgrupper eller tatt hensyn til kjønn. Da kunne vi ha sett på hvordan forholdene endres dersom vi har hensyn til disse ulike gruppene. Dette hadde vært interessant å se nærmere på til videre forskning. Som tidligere nevnt, kunne det også vært lurt å se på ulike årsaker til at kommuner flest har mer innflytting enn utflytting.  
+Videre i undersøkelsen vår, kunne vi ha delt inn variablene i ulike
+grupper, for eksempel lav/middels/høy andel pendling, ulike
+aldersgrupper eller tatt hensyn til kjønn. Da kunne vi ha sett på
+hvordan forholdene endres dersom vi har hensyn til disse ulike gruppene.
+Dette hadde vært interessant å se nærmere på til videre forskning. Som
+tidligere nevnt, kunne det også vært lurt å se på ulike årsaker til at
+kommuner flest har mer innflytting enn utflytting.
 
 # Konklusjon
 
@@ -2429,3 +2448,4 @@ Videre i undersøkelsen vår, kunne vi ha delt inn variablene i ulike grupper, f
 
 \listoffigures
 \listoftables
+
