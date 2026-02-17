@@ -114,6 +114,16 @@ load("syssendr0024.rdata")
 
 # Innledning
 
+I denne studien vil vi se på systematiske variasjoner i
+folketallsutvikling, sysselsetting, arbeidsmarkedsstatus, boligpriser,
+demografiske kjennetegn, utdanningsnivå, inn/utflytting og
+inn/utpendling for kommuner av ulik sentralitet. For å gjøre dette,
+kommer vi til å samle dataene inn i kart, kurver, ulike
+korrelasjonsundersøkelser, og multiple regresjonsanalyser. Vi vil også
+formulere noen hypoteser om sammenhengene til de ulike variablene og til
+slutt komme med en konklusjon basert på funnene og foreslå elementer til
+videre forskning.
+
 # Datainnhenting
 
 Denne studien benytter kommunevise paneldata for å analysere
@@ -184,7 +194,7 @@ Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som
 ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å
 starte. I Norge publiserer både NAV og Statistik sentralbyrå (SSB) tall
 for arbeidsledighet, men bruker ulike metoder når det kommer til å samle
-inn data. [@erikherstadhorgen2025]
+inn data [@erikherstadhorgen2025].
 
 NAVs tall omfatter personer som er registrert som helt ledigh hos NAV.
 Dette er en fulltelling av alle som faktisk har meldt seg som
@@ -202,7 +212,7 @@ ledighetstall enn NAV.
 NAVs tall gir derimot et bedre bilde av hvor mange som faktisk mottat og
 har behov for oppføring fra et statlig organ, mens SSBs tall gir et
 bredere og mer helhetlig bilde av arbeidsledigheten i befolkningen som
-helhet. [@statistisksentralbyrå2025]
+helhet [@erikherstadhorgen2025].
 
 ```{r}
 #Leser av excel-filene
@@ -1890,6 +1900,8 @@ samme kommune over tid. Dette gir et bedre grunnlag for kausal tolkning.
 Likevel kan resultatene ikke tolkes som fullt ut kausale. Det kan
 fortsatt finnes omvendt kausalitet og tidsvarierende forhold som ikke er
 kontrollert for i modellen.
+
+## Relevante hypoteser basert på deskriptiv statistikk
 
 ## En multippel regresjonsmodell for folketallsutvikling
 
