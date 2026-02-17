@@ -2494,6 +2494,3 @@ kommuner flest har mer innflytting enn utflytting.
 
 ::: {#refs}
 :::
-
-\listoffigures
-\listoftables
