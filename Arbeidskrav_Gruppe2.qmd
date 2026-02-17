@@ -114,6 +114,16 @@ load("syssendr0024.rdata")
 
 # Innledning
 
+I denne studien vil vi se på systematiske variasjoner i
+folketallsutvikling, sysselsetting, arbeidsmarkedsstatus, boligpriser,
+demografiske kjennetegn, utdanningsnivå, inn/utflytting og
+inn/utpendling for kommuner av ulik sentralitet. For å gjøre dette,
+kommer vi til å samle dataene inn i kart, kurver, ulike
+korrelasjonsundersøkelser, og multiple regresjonsanalyser. Vi vil også
+formulere noen hypoteser om sammenhengene til de ulike variablene og til
+slutt komme med en konklusjon basert på funnene og foreslå elementer til
+videre forskning.
+
 # Datainnhenting
 
 Denne studien benytter kommunevise paneldata for å analysere
@@ -184,7 +194,7 @@ Arbeidsledighet kan defineres som andelen av et lands arbeidsstyrke som
 ikke er i arbeid, men som aktivt søker jobb og er tilgjengelig for å
 starte. I Norge publiserer både NAV og Statistik sentralbyrå (SSB) tall
 for arbeidsledighet, men bruker ulike metoder når det kommer til å samle
-inn data. [@erikherstadhorgen2025]
+inn data [@erikherstadhorgen2025].
 
 NAVs tall omfatter personer som er registrert som helt ledigh hos NAV.
 Dette er en fulltelling av alle som faktisk har meldt seg som
@@ -202,7 +212,7 @@ ledighetstall enn NAV.
 NAVs tall gir derimot et bedre bilde av hvor mange som faktisk mottat og
 har behov for oppføring fra et statlig organ, mens SSBs tall gir et
 bredere og mer helhetlig bilde av arbeidsledigheten i befolkningen som
-helhet. [@statistisksentralbyrå2025]
+helhet [@erikherstadhorgen2025].
 
 ```{r}
 #Leser av excel-filene
@@ -271,8 +281,7 @@ De kommunene med lavest vekst ligger for det meste i Trøndelag og lengre
 nord i landet. Det at hele landet har hatt en vekst i befolkning kan
 tyde på at det har vært en del innvandring, eller en økning i samlet
 fruktbarhet. Samlet fruktbarhet er ett mål på gjennomsnittlig mengde
-barn kvinner vil få i løpet av livet
-(https://www.ssb.no/befolkning/fodte-og-dode/statistikk/fodte/artikler/fruktbarheten-gar-opp).
+barn kvinner vil få i løpet av livet [@sørlien2025].
 
 ### Andel befolkning i alder 20-29
 
@@ -305,17 +314,16 @@ at det er mer ettertraktet å være boende i urbane områder. For eksempel
 kan det være mer ettertraktet å bo en plass med muligheter for permanent
 høyere inntekt. Personer vil prioritere å bo urbant, dersom man kan
 tjene vesentlig mer enn i rurale områder, selv om det er vanskelig å få
-seg en jobb (Todaro, s. 147
-https://www-jstor-org.galanga.hvl.no/stable/1811100?seq=10). Videre i
-@fig-SysselVekst kan man se prosentvis sysselsettingsvekst etter år
-2000, til 2024. Her kan man se at det har både vært negativ og positiv
-vekt i landet. Igjen kommer kystområdene i Sør-Norge, samt områdene
-rundt og i Oslo godt ut, og har en høy klasse vekst. Innlandet og
-nordover i landet har en del negativ vekst. Hamarøy skiller seg spesielt
-ut og har klasse 10 vekst, selv om nabo kommunene har svak eller negativ
-vekst. Kartet tyder på at det er mer vekst i sysselsetting i urbane enn
-rurale områder, noe som kan komme av en økning av urbanisering i form av
-nye bedrifter og dermed arbeidsplasser.
+seg en jobb [@todaro1969, s. 147]. Videre i @fig-SysselVekst kan man se
+prosentvis sysselsettingsvekst etter år 2000, til 2024. Her kan man se
+at det har både vært negativ og positiv vekt i landet. Igjen kommer
+kystområdene i Sør-Norge, samt områdene rundt og i Oslo godt ut, og har
+en høy klasse vekst. Innlandet og nordover i landet har en del negativ
+vekst. Hamarøy skiller seg spesielt ut og har klasse 10 vekst, selv om
+nabo kommunene har svak eller negativ vekst. Kartet tyder på at det er
+mer vekst i sysselsetting i urbane enn rurale områder, noe som kan komme
+av en økning av urbanisering i form av nye bedrifter og dermed
+arbeidsplasser.
 
 ### Andel med universitetsutdanning
 
@@ -815,8 +823,8 @@ de datasettene vi har hentet fra oppgave 1. Med en korrelasjonsberegning
 vil vi få en korrelasjonskoeffisient, som er et tall mellom -1 og 1, der
 den negative tallet vil bety en negativ korrelasjon og positivt tall
 bety en posetiv korrelasjon mellom variablene. Vi skal altså beregne ut
-sammenhengen mellom to variabler og se hvordan de påvirker hverandre.
-(https://snl.no/korrelasjon)
+sammenhengen mellom to variabler og se hvordan de påvirker hverandre
+[@frøslie2025].
 
 Det vil bli tatt en korrelasjons beregning mellom ulike variabler med de
 dataene vi har tilgjengelig fra SSB. Dataene fra året 2014 og året 2023
@@ -1945,6 +1953,8 @@ samme kommune over tid. Dette gir et bedre grunnlag for kausal tolkning.
 Likevel kan resultatene ikke tolkes som fullt ut kausale. Det kan
 fortsatt finnes omvendt kausalitet og tidsvarierende forhold som ikke er
 kontrollert for i modellen.
+
+## Relevante hypoteser basert på deskriptiv statistikk
 
 ## En multippel regresjonsmodell for folketallsutvikling
 
