@@ -14,5 +14,3 @@ LaTeX: XeLaTeX
 
 AutoAppendNewline: Yes
 StripTrailingWhitespace: Yes
-
-ZoteroLibraries: "MSB106-Gruppe2"
