@@ -5,7 +5,9 @@ author: "Harald Vika, Henriette Hausken Kjærandsen, Karin Liang, Katinca Beate 
 institute: "HVL"
 date: last-modified
 date-format: "dddd D MMM, YYYY"
-abstract: ""
+abstract: "I denne studien undersøker vi systematiske variasjoner i folketallsutvikling, sysselsetting, arbeidsmarkedsstatus, boligpriser, demografiske kjennetegn, utdanningsnivå, inn/utflytting og inn/utpendling for norske kommuner av ulik sentralitet. Gjennom beskrivende analyser med kart og kurver, samt korrelasjons- og multiple regresjonsanalyser, dokumenterer vi betydelige forskjeller mellom sentralitetskategorier.
+Analysene viser at sentrale kommuner har høyere boligpriser, sterkere folketallsvekst, høyere andel unge voksne (20-29 år) og innbyggere med universitetsutdanning, samt positiv netto innflytting og innpendling. Mindre sentrale kommuner viser motsatt mønster med utflytting, utpendling, aldrende befolkning og lavere utdanningsnivå. Boligpriser og utdanningsnivå fremstår som særlig sterke prediktorer for befolkningsvekst i regresjonsanalysene, mens arbeidsledighet har begrenset forklaringskraft.
+Samlet sett er funnene i studien konsistente med regional vekstteori og tidligere forskning, og bekrefter at sentralitet er en grunnleggende dimensjon for å forstå regionale forskjeller i Norge. Studien demonstrerer også viktigheten av å kontrollere for multikollinearitet ved analyse av regionale utviklingsmønstre."
 number-sections: true
 number-depth: 3
 lang: NO_nb
