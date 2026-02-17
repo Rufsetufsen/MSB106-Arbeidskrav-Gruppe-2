@@ -1014,6 +1014,12 @@ cor_utflytt_2020_2023 <- flytt_std %>%
 cor_utflytt_2020_2023
 ```
 
+Her får vi en motsetning av korrelasjonsberegningen, uansett om den er
+liten. I 2018 får vi en positiv korrelasjonskoeffiseint på 0.188 mens i
+2023 får vi -0-0218 som kan sees på som null. Dette viser en svakt
+sammenheng til ingen mellom sentralitet og utflytting. Sentralitet
+forklarer i liten grad hvor mye folk flytter ut av en kommune.
+
 Sentralitet mot innpendling
 
 ```{r}
@@ -1034,7 +1040,10 @@ cor_utpend_2020_2023 <- pendl_std %>%
 cor_utpend_2020_2023
 ```
 
-Ledig mot andel i aldersgruppen 20-29
+Her har vi en godt positiv korrelasjoner mellom sentralitet og
+utpendling men beveger seg lite fra 2018 til 2023, noe som kan ha med at
+sentralitet har en påvirkning på utpendling men varierer ikke noe over
+årene. Ledig mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_ledig_andel20_29_2013_2023 <- andel_20_29 %>%
@@ -1084,7 +1093,6 @@ cor_ledig_flytt_2013_2023 <- flytt_std %>%
   arrange(år)
 
 cor_ledig_flytt_2013_2023
-
 ```
 
 Ledig mot pendling per 1000
@@ -1123,6 +1131,15 @@ cor_bolig_andel20_29_2014_2023 <- kvpris_ene %>%
 cor_bolig_andel20_29_2014_2023
 ```
 
+Her får vi en sterk korrelasjon mellom bolig pris per kvadrat meter mot
+andel i aldersgruppen 20-29. Korrelasjonen mellom boligpriser og andel
+20–29-åringer er svært høy i 2014 (0,83) og fortsatt tydelig positiv i
+2023 (0,62). Dette indikerer en sterk strukturell sammenheng mellom
+urbane boligmarkeder og konsentrasjonen av unge voksne. Sentrale og
+attraktive kommuner med høye boligpriser har også systematisk høyere
+andel unge innbyggere. Nedgangen i korrelasjonen kan tyde på en viss
+desentralisering eller mer utjevnet boligprisvekst etter pandemien.
+
 Bolig kvm.pris mot innpendling
 
 ```{r}
@@ -1133,6 +1150,12 @@ cor_bolig_innpend_2014_2023 <- kvpris_ene %>%
   cor_by_year(kvpris, Innpendlere)
 cor_bolig_innpend_2014_2023
 ```
+
+Korrelasjonen mellom boligpriser og innpendling er høy og stabil i både
+2014 og 2023. Dette indikerer at kommuner med høye boligpriser også er
+sentrale arbeidsmarkeder med betydelig innpendling. Sammenhengen har
+blitt noe sterkere over tid, noe som kan reflektere økt konsentrasjon av
+arbeidsplasser i sentrale regioner.
 
 Bolig kvmpris mot utpendling
 
@@ -1145,6 +1168,12 @@ cor_bolig_utpend_2014_2023 <- kvpris_ene %>%
 cor_bolig_utpend_2014_2023
 ```
 
+Korrelasjonen mellom boligpriser og antall utpendlere er høy i både 2014
+og 2023. Dette indikerer at kommuner med høye boligpriser også har
+omfattende pendlestrømmer ut av kommunen. Sammenhengen reflekterer
+trolig at sentrale og folkerike kommuner inngår i større, funksjonelle
+arbeidsmarkedsregioner med betydelig krysspendling.
+
 Bolig kvm.pris mot utflytting
 
 ```{r}
@@ -1155,6 +1184,13 @@ cor_bolig_utflytt_2014_2023 <- kvpris_ene %>%
   cor_by_year(kvpris, utflytt_per1000)
 cor_bolig_utflytt_2014_2023
 ```
+
+I 2014 var det en moderat positiv sammenheng mellom boligpriser og
+utflytting per 1000 innbyggere, noe som trolig reflekterer høy mobilitet
+i sentrale og kostbare kommuner. I 2023 er sammenhengen tilnærmet null.
+Dette indikerer at boligprisnivå i seg selv ikke systematisk forklarer
+bruttoutflytting, og at eventuelle sammenhenger i 2014 sannsynligvis var
+drevet av underliggende strukturelle forskjeller mellom kommuner.
 
 Bolig kvm.pris mot innflytting
 
@@ -1167,6 +1203,13 @@ cor_bolig_innflytt_2014_2023 <- kvpris_ene %>%
 cor_bolig_innflytt_2014_2023
 ```
 
+I 2014 var det en sterk positiv sammenheng mellom boligpriser og
+innflytting per 1000 innbyggere, noe som indikerer at sentrale og
+kostbare kommuner også var de mest attraktive målt ved innflytting. I
+2023 er sammenhengen betydelig svakere. Dette kan reflektere endrede
+flyttemønstre etter pandemien, økt bruk av hjemmekontor og mer
+geografisk utjevning i boligprisveksten.
+
 Nettoflytting mot andel i aldersgruppen 20-29
 
 ```{r}
@@ -1177,6 +1220,10 @@ cor_nettoflytt_andel20_29_2014_2023 <- flytt_std %>%
 cor_nettoflytt_andel20_29_2014_2023
 ```
 
+Her har vi en positiv sammenheng i 2014 til en negativ i 2023, men
+korrelasjonene mellom disse variablene er nesten lik null og kan ses på
+som svært lite påvirkning på hverandre.
+
 Nettoflytting mot netto utpendling
 
 ```{r}
@@ -1186,8 +1233,10 @@ cor_nettoflytt_netto_utpend_2014_2023 <- flytt_std %>%
             by = c("kommunenummer", "år")) %>%
   cor_by_year(nettoflytt_per1000, nettopend)
 cor_nettoflytt_netto_utpend_2014_2023
-
 ```
+
+Her får vi også en liten sammenheng mellom de to variablene, selv om
+årene 2014 og 2023 går fra en positiv til en negativ korrelasjon.
 
 Netto utpendling og bolig kvm.pris i tilgrensende kommuner
 
@@ -1238,8 +1287,15 @@ cor_netto_utpend_nabo_kvpris_2014_2023 <- pendl_std %>%
   ) %>%
   arrange(år)
 cor_netto_utpend_nabo_kvpris_2014_2023
-
 ```
+
+Korrelasjonen mellom netto pendling og gjennomsnittlig boligpris i
+nabokommunene er svak, men negativ i både 2014 og 2023. Dette indikerer
+at kommuner som grenser til kommuner med høye boligpriser i større grad
+fungerer som bostedskommuner med netto utpendling. Resultatet er
+konsistent med en sentrum–omland-struktur, der høye boligpriser i
+sentrale kommuner bidrar til økt bosetting og utpendling fra
+omlandskommuner.
 
 ## Paneldata
 
@@ -1295,9 +1351,6 @@ cor_folk_syss %>%
     max = max(cor_folk_syss, na.rm = TRUE),
     n_na = sum(is.na(cor_folk_syss))
   )
-
-
-
 ```
 
 Korrelasjonsberegningene for årlige endringer viser at den
@@ -2347,3 +2400,4 @@ på kommunenivå.
 
 \listoffigures
 \listoftables
+
