@@ -1,7 +1,7 @@
 ---
 title: "Sentralitet, sysselsetting og struktur: Der ingen skulle tru at nokon kunne bu."
 subtitle: "En analyse av norske demografiske mønstre fra en regionaløkonomisk vinkling."
-author: "Harald Vika, Henriette Hausken Kjærandsen, Karin Liang, Katinca Beate Valvatne, Kristoffer Tufta"
+author: "Harald Bjarne Vika, Henriette Hausken Kjærandsen, Karin Liang, Katinca Beate Valvatne, Kristoffer Tufta"
 institute: "HVL"
 date: last-modified
 date-format: "dddd D MMM, YYYY"
