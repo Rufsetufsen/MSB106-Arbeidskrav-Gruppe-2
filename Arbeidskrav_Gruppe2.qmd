@@ -2490,6 +2490,70 @@ kommuner flest har mer innflytting enn utflytting.
 
 # Konklusjon
 
+Denne studien har analysert systematiske forskjeller mellom norske
+kommuner med utgangspunkt i sentralitet, demografi, arbeidsmarked,
+boligmarked, flytting og pendling. Samlet sett viser resultatene
+konsistente mønstre i tråd med regionaløkonomisk teori.
+
+De mest sentrale kommunene har hatt sterkere befolkningsvekst, høyere
+andel unge voksne og høyere andel høyt utdannede innbyggere enn mindre
+sentrale kommuner. Samtidig er boligprisene klart høyest i de mest
+sentrale områdene, og sammenhengen mellom sentralitet og
+kvadratmeterpris er både sterk og stabil. Dette er konsistent med urban
+økonomisk teori, hvor agglomerasjonsfordeler, arbeidsmarkedets tykkelse
+og budrentemekanismer bidrar til konsentrasjon av både arbeidsplasser og
+befolkning i sentrale områder.
+
+Pendleanalysene gir særlig sterke resultater. Endringer i sysselsetting
+samvarierer i liten grad med årlige endringer i folketall innen samme
+kommune, men har en svært sterk positiv sammenheng med endringer i
+innpendling. Dette indikerer at arbeidsmarkedets kortsiktige tilpasning
+primært skjer gjennom daglig mobilitet, ikke gjennom flytting.
+Resultatet støtter forståelsen av norske kommuner som deler av
+funksjonelle arbeidsmarkedsregioner, hvor bosted og arbeidssted i
+betydelig grad er adskilt. Arbeidsledighet reagerer også relativt raskt
+på sysselsettingsendringer, noe som viser at lokale arbeidsmarkeder har
+interne justeringsmekanismer før mer langsiktige demografiske
+tilpasninger finner sted.
+
+Boligmarkedets rolle fremstår mer sammensatt. På tvers av kommuner er
+sammenhengen mellom boligpriser og innpendling sterk, mens sammenhengen
+mellom boligpriser og nettoflytting varierer betydelig. I storbykjerner
+er sammenhengen mellom boligpriser og nettoflytting negativ, noe som kan
+tyde på at svært høye boligpriser virker begrensende på netto
+innflytting og bidrar til økt bosetting i omlandskommuner. I mindre
+sentrale kommuner er sammenhengen svakere og ofte svakt positiv. Dette
+peker mot en struktur hvor sentrale kommuner fungerer som
+arbeidsplasskjerner, mens omlandet i større grad fungerer som
+bostedsområder.
+
+Regresjonsanalysene nyanserer bildet ytterligere. I pooled modeller
+fremstår sammenhengen mellom befolkning og sysselsetting sterk, men når
+det kontrolleres for kommune- og årsfaste effekter reduseres
+koeffisienten betydelig. Dette viser at en del av den observerte
+samvariasjonen skyldes varige strukturelle forskjeller mellom kommuner.
+Fixed effects-modellene viser at innen-kommunale endringer over tid gir
+svakere og mer selektive effekter enn tverrsnittsanalysene antyder.
+Netto utflytting og andel unge voksne har konsistente sammenhenger med
+befolkningsvekst innen kommuner, mens flere andre variabler mister
+signifikans når forskjeller over tid kontrolleres for.
+
+Alt i alt viser analysen et helhetlig og sammenhengende mønster av et
+integrert og lagdelt regionalt system i Norge. Sentralitet strukturerer
+langsiktige nivåforskjeller mellom kommuner, mens kortsiktige
+tilpasninger i arbeidsmarkedet primært skjer gjennom pendling og
+endringer i ledighet snarere enn gjennom umiddelbar flytting.
+Boligmarkedet spiller en viktig rolle, men effektene varierer
+systematisk mellom ulike typer kommuner.
+
+Resultatene gir ikke grunnlag for entydige kausale tolkninger, men de er
+i stor grad konsistente med sentrale teorier innen urban og regional
+økonomi, særlig agglomerasjonsteori, budrenteteori og teorien om
+funksjonelle arbeidsmarkedsregioner. Videre forskning bør i større grad
+adressere endogenitet, tidsforsinkelser og romlige avhengigheter, samt
+undersøke heterogenitet mellom ulike typer kommuner og
+befolkningsgrupper.
+
 # Litteraturliste
 
 ::: {#refs}
