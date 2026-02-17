@@ -1734,8 +1734,6 @@ modelsummary(
 
 ```
 
-Sammenlign resultatene for disse to regresjonsmodellene:
-
 I den pooled regresjonen er sysselsetting den avhengige variabelen og
 befolkning forklaringsvariabelen. Modellen skiller ikke mellom kommuner
 og år, men behandler alle kommune-år-observasjoner samlet. Estimatet
@@ -1757,12 +1755,6 @@ At koeffisienten i modellen med faste effekter er lavere enn i den
 pooled regresjonen, indikerer at en del av den positive sammenhengen i
 pooled modellen skyldes varige strukturelle forskjeller mellom kommuner
 som kontrolleres for når faste effekter inkluderes.
-
-Sammenlign med resultater for korrelasjonskoeﬀisienter i deloppgaven
-foran:
-
-Kan resultatene fra slike regresjonsmodeller i større grad enn
-korrelasjonskoeﬀisienten tolkes kausalt?
 
 Resultatene fra regresjonsmodellene kan i større grad enn en enkel
 korrelasjonskoeffisient tolkes kausalt. En korrelasjonskoeffisient viser
