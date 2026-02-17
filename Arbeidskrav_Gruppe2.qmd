@@ -4,7 +4,7 @@ author: "Harald Vika, Henriette Hausken Kjærandsen, Karin Liang, Katinca Beate 
 institute: "HVL"
 date: last-modified
 date-format: "dddd D MMM, YYYY"
-abstract: ""
+abstract: "I denne studien undersøker vi systematiske variasjoner i folketallsutvikling, sysselsetting, arbeidsmarkedsstatus, boligpriser, demografiske kjennetegn, utdanningsnivå, inn/utflytting og inn/utpendling for kommuner av ulik sentralitet. Gjennom oppgaven blir det gjort analyser med hjelp av kart, kurver, ulike korrelasjonsundersøkelser og multiple regresjonsanalyser. Med hjelp av resultatene til kartene, kurvene og korrelasjonsberegningene vil vi formulere noen hypoteser om forholdene til variablene. Samlet sett er funnnene i studien konsistente med teori og tidligere funn, som regional vekstteori. "
 number-sections: true
 number-depth: 3
 lang: NO_nb
