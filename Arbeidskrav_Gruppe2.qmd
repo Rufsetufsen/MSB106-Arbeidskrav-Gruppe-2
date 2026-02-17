@@ -818,22 +818,34 @@ det pendles mer inn til de mest sentrale kommunene.
 
 ## Korrelasjoner
 
-Her vil vi ta for oss beregniner av korrelasjon mellom to variabler fra
-de datasettene vi har hentet fra oppgave 1. Med en korrelasjonsberegning
-vil vi få en korrelasjonskoeffisient, som er et tall mellom -1 og 1, der
-den negative tallet vil bety en negativ korrelasjon og positivt tall
-bety en posetiv korrelasjon mellom variablene. Vi skal altså beregne ut
-sammenhengen mellom to variabler og se hvordan de påvirker hverandre
-[@frøslie2025].
+I dette delkapitlet analyseres sammenhengen mellom utvalgte variabler
+fra datasettene som ble hentet inn i oppgave 1. For å undersøke disse
+sammenhengene benyttes korrelasjonsanalyse. En korrelasjonsberegning gir
+en korrelasjonskoeffisient, et tall mellom -1 og 1, som uttrykker
+styrken og retningen på den lineære sammenhengen mellom to variabler. En
+positiv verdi indikerer at variablene beveger seg i samme retning, mens
+en negativ verdi innebærer at de beveger seg i motsatt retning. En verdi
+nær 0 tyder på svak eller ingen lineær sammenheng [@frøslie2025;
+@salomão2024].
 
-Det vil bli tatt en korrelasjons beregning mellom ulike variabler med de
-dataene vi har tilgjengelig fra SSB. Dataene fra året 2014 og året 2023
-vil bli trukket frem for å beregne korrelasjonen mellom de variablene
-for norske kommuner. Sentralitet derimot har vi tilgjengelig data fra
-2018, 2020 og 2023, og det blitt valgt å ta data fra 2018 og vil i de
-beregningene bruke årene 2018 og 2023. På de beregningene som viser
-størst forskjeller eller tall som stikker ut, vil bli kommentert på og
-gitt en mer forklaring på hvorfor vi får det resultatet.
+I analysen benyttes Pearsons korrelasjonskoeffisient, som måler graden
+av lineær samvariasjon mellom to kvantitative variabler. Det er viktig å
+presisere at korrelasjon ikke innebærer kausalitet; en høy korrelasjon
+betyr ikke nødvendigvis at den ene variabelen forårsaker endringer i den
+andre, men kun at de varierer systematisk sammen.
+
+Korrelasjonsberegningene gjennomføres på tvers av norske kommuner for
+utvalgte år. For de fleste variablene benyttes data fra 2014 og 2023,
+slik at vi kan sammenligne sammenhenger før og etter en periode med
+betydelige økonomiske og demografiske endringer. For
+sentralitetsindeksen er det kun tilgjengelige data for 2018, 2020 og
+2023. I disse analysene benyttes derfor 2018 og 2023 for å sikre
+sammenlignbarhet over tid.
+
+I de tilfellene hvor korrelasjonskoeffisientene viser særlig sterke
+sammenhenger, tydelige endringer over tid eller uventede resultater, vil
+disse bli diskutert nærmere. Det skal ikke bare presentere tallverdier,
+men vi skal også tolke dem.
 
 ```{r}
 # Hjelpefunksjoner (standardisering av rensing + generell korrelasjon)
@@ -947,7 +959,7 @@ pendl_std <- pendl %>%
   )
 ```
 
-Folketall mot andel i aldersgruppen 20-29
+-   Folketall mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_folk_2013_2023 <- andel_20_29 %>%
@@ -962,7 +974,7 @@ større kommuner relativt sett har en yngre befolkningssammensetning.
 Sammenhengen er noe svakere i 2023 enn i 2014, noe som kan indikere en
 svak reduksjon i graden av aldersselektiv urbanisering
 
-Sentralitet mot andel i aldersgruppen 20-29
+-   Sentralitet mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_sent_2020_2023 <- andel_20_29 %>%
@@ -972,7 +984,7 @@ cor_sent_2020_2023 <- andel_20_29 %>%
 cor_sent_2020_2023
 ```
 
-Sentralitet mot arbeidsledighet
+-   Sentralitet mot arbeidsledighet
 
 ```{r}
 cor_ledig_2020_2023 <- ledig %>%
@@ -984,7 +996,7 @@ cor_ledig_2020_2023
 
 Får lik beregning, noe som kan si at sentraliteten er lite bevegelig.
 
-Sentralitet mot enebolig kvm.pris
+-   Sentralitet mot enebolig kvm.pris
 
 ```{r}
 cor_bolig_2020_2023 <- kvpris_ene %>%
@@ -994,7 +1006,7 @@ cor_bolig_2020_2023 <- kvpris_ene %>%
 cor_bolig_2020_2023
 ```
 
-Sentralitet mot andel med høyere utdanning
+-   Sentralitet mot andel med høyere utdanning
 
 ```{r}
 cor_utd_2020_2023 <- andel_hoyere %>%
@@ -1004,7 +1016,7 @@ cor_utd_2020_2023 <- andel_hoyere %>%
 cor_utd_2020_2023
 ```
 
-Sentralitet mot utflytting
+-   Sentralitet mot utflytting
 
 ```{r}
 cor_utflytt_2020_2023 <- flytt_std %>%
@@ -1020,7 +1032,7 @@ liten. I 2018 får vi en positiv korrelasjonskoeffiseint på 0.188 mens i
 sammenheng til ingen mellom sentralitet og utflytting. Sentralitet
 forklarer i liten grad hvor mye folk flytter ut av en kommune.
 
-Sentralitet mot innpendling
+-   Sentralitet mot innpendling
 
 ```{r}
 cor_innpend_2020_2023 <- pendl_std %>%
@@ -1053,7 +1065,7 @@ cor_ledig_andel20_29_2013_2023 <- andel_20_29 %>%
 cor_ledig_andel20_29_2013_2023
 ```
 
-Ledig mot enebolig kvm.pris
+-   Ledig mot enebolig kvm.pris
 
 ```{r}
 cor_ledig_bolig_2013_2023 <- kvpris_ene %>%
@@ -1063,7 +1075,7 @@ cor_ledig_bolig_2013_2023 <- kvpris_ene %>%
 cor_ledig_bolig_2013_2023
 ```
 
-Ledig vs andel med høyere utdanning
+-   Ledig vs andel med høyere utdanning
 
 ```{r}
 cor_ledig_utd_2013_2023 <- andel_hoyere %>%
@@ -1073,7 +1085,7 @@ cor_ledig_utd_2013_2023 <- andel_hoyere %>%
 cor_ledig_utd_2013_2023
 ```
 
-Ledig mot utflytting per 1000
+-   Ledig mot utflytting per 1000
 
 ```{r}
 cor_ledig_flytt_2013_2023 <- flytt_std %>%
@@ -1095,7 +1107,7 @@ cor_ledig_flytt_2013_2023 <- flytt_std %>%
 cor_ledig_flytt_2013_2023
 ```
 
-Ledig mot pendling per 1000
+-   Ledig mot pendling per 1000
 
 ```{r}
 cor_ledig_utpend_2013_2023 <- pendl_std %>%
@@ -1111,7 +1123,7 @@ cor_ledig_utpend_2013_2023 <- pendl_std %>%
 cor_ledig_utpend_2013_2023
 ```
 
-Bolig kvm.pris mot andel med høyere utdanning
+-   Bolig kvm.pris mot andel med høyere utdanning
 
 ```{r}
 cor_bolig_utd_2014_2023 <- kvpris_ene %>%
@@ -1121,7 +1133,7 @@ cor_bolig_utd_2014_2023 <- kvpris_ene %>%
 cor_bolig_utd_2014_2023
 ```
 
-Bolig kvm.pris mot andel i aldersgruppen 20-29
+-   Bolig kvm.pris mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_bolig_andel20_29_2014_2023 <- kvpris_ene %>%
@@ -1140,7 +1152,7 @@ attraktive kommuner med høye boligpriser har også systematisk høyere
 andel unge innbyggere. Nedgangen i korrelasjonen kan tyde på en viss
 desentralisering eller mer utjevnet boligprisvekst etter pandemien.
 
-Bolig kvm.pris mot innpendling
+-   Bolig kvm.pris mot innpendling
 
 ```{r}
 cor_bolig_innpend_2014_2023 <- kvpris_ene %>%
@@ -1157,7 +1169,7 @@ sentrale arbeidsmarkeder med betydelig innpendling. Sammenhengen har
 blitt noe sterkere over tid, noe som kan reflektere økt konsentrasjon av
 arbeidsplasser i sentrale regioner.
 
-Bolig kvmpris mot utpendling
+-   Bolig kvmpris mot utpendling
 
 ```{r}
 cor_bolig_utpend_2014_2023 <- kvpris_ene %>%
@@ -1174,7 +1186,7 @@ omfattende pendlestrømmer ut av kommunen. Sammenhengen reflekterer
 trolig at sentrale og folkerike kommuner inngår i større, funksjonelle
 arbeidsmarkedsregioner med betydelig krysspendling.
 
-Bolig kvm.pris mot utflytting
+-   Bolig kvm.pris mot utflytting
 
 ```{r}
 cor_bolig_utflytt_2014_2023 <- kvpris_ene %>%
@@ -1192,7 +1204,7 @@ Dette indikerer at boligprisnivå i seg selv ikke systematisk forklarer
 bruttoutflytting, og at eventuelle sammenhenger i 2014 sannsynligvis var
 drevet av underliggende strukturelle forskjeller mellom kommuner.
 
-Bolig kvm.pris mot innflytting
+-   Bolig kvm.pris mot innflytting
 
 ```{r}
 cor_bolig_innflytt_2014_2023 <- kvpris_ene %>%
@@ -1210,7 +1222,7 @@ kostbare kommuner også var de mest attraktive målt ved innflytting. I
 flyttemønstre etter pandemien, økt bruk av hjemmekontor og mer
 geografisk utjevning i boligprisveksten.
 
-Nettoflytting mot andel i aldersgruppen 20-29
+-   Nettoflytting mot andel i aldersgruppen 20-29
 
 ```{r}
 cor_nettoflytt_andel20_29_2014_2023 <- flytt_std %>%
@@ -1224,7 +1236,7 @@ Her har vi en positiv sammenheng i 2014 til en negativ i 2023, men
 korrelasjonene mellom disse variablene er nesten lik null og kan ses på
 som svært lite påvirkning på hverandre.
 
-Nettoflytting mot netto utpendling
+-   Nettoflytting mot netto utpendling
 
 ```{r}
 cor_nettoflytt_netto_utpend_2014_2023 <- flytt_std %>%
@@ -1238,7 +1250,7 @@ cor_nettoflytt_netto_utpend_2014_2023
 Her får vi også en liten sammenheng mellom de to variablene, selv om
 årene 2014 og 2023 går fra en positiv til en negativ korrelasjon.
 
-Netto utpendling og bolig kvm.pris i tilgrensende kommuner
+-   Netto utpendling og bolig kvm.pris i tilgrensende kommuner
 
 ```{r, warning=FALSE, message=FALSE}
 dsn <- "WFS:https://wfs.geonorge.no/skwms1/wfs.inspire-au?service=WFS"
@@ -1299,7 +1311,7 @@ omlandskommuner.
 
 ## Paneldata
 
-Årlig endring i folketall og sysselsetting
+-   Årlig endring i folketall og sysselsetting
 
 ```{r}
 folk_syss_panel <- demografi_total %>%
@@ -1353,14 +1365,15 @@ cor_folk_syss %>%
   )
 ```
 
-Korrelasjonsberegningene for årlige endringer viser at den
-gjennomsnittlige korrelasjonen mellom befolkningsendringer og
-sysselsettingsendringer er nær null (0.0157). Dette indikerer at den
-sterke positive sammenhengen observert i pooled analyser i stor grad
-reflekterer strukturelle forskjeller mellom kommuner, snarere enn
-kortsiktig samvariasjon innen samme kommune over tid. Når korrelasjonen
-er nærmest lik null, kan en se at variablene nesten ikke har en lineær
-sammenheng med hverandre.
+Den gjennomsnittlige korrelasjonen mellom årlige endringer i
+sysselsetting og folketall er tilnærmet null, noe som indikerer at
+kortsiktige endringer i arbeidsplasser i liten grad fører til umiddelbar
+befolkningsvekst. Dette tyder på at arbeidsmarkedets tilpasning i større
+grad skjer gjennom pendling enn gjennom flytting. En slik tolkning er i
+tråd med regionaløkonomisk teori om funksjonelle arbeidsmarkedsregioner,
+hvor arbeidskraftens daglige mobilitet gjør det mulig å tilpasse seg
+endringer i sysselsetting uten at husholdninger nødvendigvis endrer
+bosted [@capello].
 
 Årlig endring i prosentvis arbeidsledighet og årlig prosentvis endring i
 sysselsetting
@@ -1417,12 +1430,12 @@ cor_ledig_syss%>%
 ```
 
 Den gjennomsnittlige korrelasjonen mellom årlig endring i
-arbeidsledighet og årlig prosentvis endring i sysselsetting er -0.303.
-Dette indikerer en moderat negativ sammenheng, der økt sysselsetting
-typisk samvarierer med fallende ledighet. Sammenhengen er relativt
-robust på tvers av kommuner, noe som tyder på at arbeidsmarkedet
-reagerer mer direkte og kortsiktig på sysselsettingsendringer enn det
-befolkningsutviklingen gjør.
+arbeidsledighet og årlig sysselsettingsvekst er moderat negativ
+(-0.303). Dette indikerer at arbeidsmarkedet reagerer relativt raskt på
+endringer i sysselsetting, ved at økt sysselsetting samvarierer med
+fallende ledighet. Resultatet tyder på at arbeidsledighet fungerer som
+en kortsiktig justeringsmekanisme i regionale arbeidsmarkeder, i tråd
+med regionaløkonomisk teori om faktorjustering [@capello].
 
 Årlig endring i boligpriser og årlig netto innflytting
 
@@ -1673,7 +1686,7 @@ korrelasjonskoeffsient. Spearman-korrelasjon måler styrken og retningen
 til variablene som beveger seg i samme retning, uavhengig av om
 sammenhengen er lineær, mens Pearson-korrelasjon måler den lineære
 styrken og retningen til variablene mens de beveger seg kontinuerlig. Vi
-tar eksempelet mellom sentralitet og kvadratmeterpris.
+tar eksempelet mellom sentralitet og kvadratmeterpris [@korrelas].
 
 ```{r}
 sent_bolig <- kvpris_ene %>% # Gjør klart et datasett for beregningen
@@ -2388,4 +2401,3 @@ summary(m_7FE)
 
 \listoffigures
 \listoftables
-
