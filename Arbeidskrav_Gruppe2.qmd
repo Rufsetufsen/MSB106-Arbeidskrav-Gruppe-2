@@ -1,6 +1,6 @@
 ---
 title: "Arbeidskrav i Regional økonomi"
-author: "Gruppe 2"
+author: "Harald Vika, Henriette Hausken Kjærandsen, Karin Liang, Katinca Beate Valvatne, Kristoffer Tufta"
 institute: "HVL"
 date: last-modified
 date-format: "dddd D MMM, YYYY"
@@ -116,7 +116,7 @@ load("syssendr0024.rdata")
 
 # Datainnhenting
 
-Dettee studie benytter kommunevise paneldata for å analysere
+Denne studien benytter kommunevise paneldata for å analysere
 sammenhenger mellom sentralitet, demografi, arbeidsmarked, boligmarked
 og flyttemønstre i norske kommuner. Nedenfor gis en kort redegjørelse
 for de enkelte datasettene og deres rolle i de videre deskriptive og
@@ -2322,4 +2322,3 @@ summary(m_7FE)
 
 \listoffigures
 \listoftables
-
