@@ -1855,17 +1855,6 @@ modelsummary(
 
 ```
 
-Sammenlign resultatene for disse to regresjonsmodellene:
-
-I den pooled regresjonen er sysselsetting den avhengige variabelen og
-befolkning forklaringsvariabelen. Modellen skiller ikke mellom kommuner
-og år, men behandler alle kommune-år-observasjoner samlet. Estimatet
-utnytter derfor både forskjeller mellom kommuner og endringer innen
-samme kommune over tid for å beskrive sammenhengen mellom befolkning og
-sysselsetting. Koeffisienten på 0,696 innebærer at en økning i
-befolkningen på en person i gjennomsnitt er assosiert med om lag 0,696
-flere sysselsatte.
-
 Når faste effekter for både kommuner og år inkluderes, kontrollerer
 modellen for kommune-spesifikke faktorer som er konstante over tid, samt
 felles nasjonale sjokk i hvert år. I denne spesifikasjonen identifiseres
@@ -1879,9 +1868,6 @@ pooled regresjonen, indikerer at en del av den positive sammenhengen i
 pooled modellen skyldes varige strukturelle forskjeller mellom kommuner
 som kontrolleres for når faste effekter inkluderes.
 
-Sammenlign med resultater for korrelasjonskoeﬀisienter i deloppgaven
-foran:
-
 Regresjonsmodellene gir en mer presis beskrivelse av sammenhengen mellom
 befolkning og sysselsetting enn korrelasjonskoeffisientene i deloppgaven
 foran. Mens korrelasjonskoeffisientene kun måler graden av samvariasjon
@@ -1889,9 +1875,6 @@ mellom variablene, gir regresjonsmodellene en strukturert analyse der
 sammenhengen estimeres eksplisitt. Dette gjør det mulig å skille mellom
 ulike kilder til variasjon og gir en klarere forståelse av hvordan
 befolkning og sysselsetting henger sammen.
-
-Kan resultatene fra slike regresjonsmodeller i større grad enn
-korrelasjonskoeﬀisienten tolkes kausalt?
 
 Resultatene fra regresjonsmodellene kan i større grad enn en enkel
 korrelasjonskoeffisient tolkes kausalt. En korrelasjonskoeffisient viser
