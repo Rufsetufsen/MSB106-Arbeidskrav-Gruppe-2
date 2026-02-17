@@ -446,10 +446,10 @@ ikke før i 2024. Den (svake) oppgangen i tiden etter er også
 interessant. Kan det være normalisering av hjemmekontor og økt fokus på
 distriktsutvikling som driver denne desentraliseringen? Presser høye
 boligpriser folk ut fra de mest sentrale kommunene? Ønsker folk større
-boliger, noe som er mer tilgjengelig i periferien[@capello, s. 54]? Det
-finnes mange mulige sentrifugale krefter som fungerer desentraliserende
-på befolkningen, men vi har ikke grunnlag til å trekke konklusjoner på
-dette ennå.
+boliger, noe som er mer tilgjengelig i periferien[@capello2016, s. 54]?
+Det finnes mange mulige sentrifugale krefter som fungerer
+desentraliserende på befolkningen, men vi har ikke grunnlag til å trekke
+konklusjoner på dette ennå.
 
 ### Andel innbyggere 20-29 år etter sentralitetskategori
 
@@ -502,11 +502,11 @@ Andel innbyggere i 20-årene ser ut til å følge en noenlunde lik
 utvikling nasjonalt, unntatt for sentralitetsklasse 1 og 2 som har hatt
 en svakere nedgang i unge innbyggere enn resten av landet. Dette kan
 skyldes at unge mennesker reagerer bedre på de positive effektene av
-urbanisering, som et bredere kulturtilbud og flere ameniteter [@capello,
-s.187]. En annen hypotese kan være at de i aldersgruppen 20-29 er på det
-livsstadiet at de vil ta høyere utdanning - "learning by schooling" - og
-at de derfor i større grad trekkes mot steder der det finnes
-universiteter, som ofte er lagt til de større, mer sentrale byene
+urbanisering, som et bredere kulturtilbud og flere ameniteter
+[@capello2016, s.187]. En annen hypotese kan være at de i aldersgruppen
+20-29 er på det livsstadiet at de vil ta høyere utdanning - "learning by
+schooling" - og at de derfor i større grad trekkes mot steder der det
+finnes universiteter, som ofte er lagt til de større, mer sentrale byene
 [@göcke2004].
 
 ### Arbeidsledighet etter sentralitetskategori
@@ -1383,7 +1383,7 @@ grad skjer gjennom pendling enn gjennom flytting. En slik tolkning er i
 tråd med regionaløkonomisk teori om funksjonelle arbeidsmarkedsregioner,
 hvor arbeidskraftens daglige mobilitet gjør det mulig å tilpasse seg
 endringer i sysselsetting uten at husholdninger nødvendigvis endrer
-bosted [@capello].
+bosted [@capello2016].
 
 Årlig endring i prosentvis arbeidsledighet og årlig prosentvis endring i
 sysselsetting
@@ -1445,7 +1445,7 @@ arbeidsledighet og årlig sysselsettingsvekst er moderat negativ
 endringer i sysselsetting, ved at økt sysselsetting samvarierer med
 fallende ledighet. Resultatet tyder på at arbeidsledighet fungerer som
 en kortsiktig justeringsmekanisme i regionale arbeidsmarkeder, i tråd
-med regionaløkonomisk teori om faktorjustering [@capello].
+med regionaløkonomisk teori om faktorjustering [@capello2016].
 
 Årlig endring i boligpriser og årlig netto innflytting
 
@@ -1978,6 +1978,58 @@ fortsatt finnes omvendt kausalitet og tidsvarierende forhold som ikke er
 kontrollert for i modellen.
 
 ## Relevante hypoteser basert på deskriptiv statistikk
+
+Den deskriptive statistikken viser tydelige sammenhenger mellom
+sentralitet, befolkningsutvikling, utdanningsnivå, boligpriser og
+pendlemønstre. Hypotesene som formuleres nedenfor bygger på disse
+observerte mønstrene og kan forankres i etablert urban- og
+regionaløkonomisk teori.
+
+For det første viser utviklingskurvene at mer sentrale kommuner har hatt
+sterkere befolkningsvekst enn mindre sentrale kommuner. Dette gir
+grunnlag for hypotesen om en positiv sammenheng mellom sentralitet og
+befolkningsvekst. Ifølge agglomerasjonsteorien oppstår byvekst fordi
+konsentrasjon av økonomisk aktivitet gir produktivitetsgevinster gjennom
+spesialisering og kunnskapsspredning [@brueckner2011]. I regional
+vekstteori beskrives dette som kumulative og selvforsterkende prosesser,
+hvor økonomisk aktivitet tiltrekker ytterligere aktivitet
+[@capello2016].
+
+Når det gjelder netto utflytting og andelen innbyggere i aldersgruppen
+20–29 år, viser materialet at sentrale kommuner har en høyere andel unge
+voksne. Hypotesen er derfor at sentrale kommuner fungerer som mottakere
+av unge i utdannings- og etableringsfasen. Dette samsvarer med teorier
+om arbeidsmarkedets tykkelse og jobbmatching, hvor større og mer
+differensierte arbeidsmarkeder gir høyere forventet avkastning på
+humankapital [@brueckner2011].
+
+Sammenhengen mellom prosentvis arbeidsledighet og netto utflytting
+fremstår svakere. Teoretisk skulle høy arbeidsledighet øke utflyttingen,
+men i integrerte arbeidsmarkedsregioner kan husholdninger i stedet velge
+å pendle. Den monosentriske bymodellen viser hvordan bosted og
+arbeidssted kan skilles når pendlekostnader balanseres mot boligpriser
+[@brueckner2011].
+
+Videre viser dataene en positiv sammenheng mellom andelen med høyere
+utdanning og sysselsetting per 1000 innbyggere. Innen endogen vekstteori
+fremheves humankapital som en sentral drivkraft for produktivitet og
+sysselsetting [@capello2016]. Kommuner med høy kompetansekonsentrasjon
+forventes derfor å ha høyere sysselsettingsintensitet.
+
+Sammenhengen mellom sentralitet og boligpriser er sterk. Ifølge
+budrenteteorien faller boligpriser med økende avstand til sentrum fordi
+husholdninger må kompenseres for høyere pendlekostnader
+[@brueckner2011]. Den sterke positive korrelasjonen mellom sentralitet
+og kvadratmeterpris er dermed i tråd med byøkonomisk teori.
+
+Når det gjelder netto utpendling og boligpriser i nabokommuner, kan
+dette forstås gjennom teorien om funksjonelle arbeidsmarkedsregioner,
+hvor sentrum fungerer som arbeidsplasskjerne og omkringliggende kommuner
+som bostedskommuner [@capello2016].
+
+Samlet sett er de deskriptive funnene konsistente med sentrale bidrag
+innen urban og regional økonomi, herunder agglomerasjonsteori og
+regional vekstteori [@brueckner2011; @capello2016].
 
 ## En multippel regresjonsmodell for folketallsutvikling
 
