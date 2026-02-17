@@ -2552,8 +2552,8 @@ Resultatene gir ikke grunnlag for entydige kausale tolkninger, men de er
 i stor grad konsistente med sentrale teorier innen urban og regional
 økonomi, særlig agglomerasjonsteori, budrenteteori og teorien om
 funksjonelle arbeidsmarkedsregioner. Videre forskning bør i større grad
-adressere endogenitet, tidsforsinkelser og romlige avhengigheter, samt
-undersøke heterogenitet mellom ulike typer kommuner og
+ta hensyn til endogenitet, tidsforsinkelser og romlige avhengigheter,
+samt undersøke heterogenitet mellom ulike typer kommuner og
 befolkningsgrupper.
 
 # Litteraturliste
